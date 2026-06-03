@@ -9,6 +9,7 @@ import {
   removePhotoUrl,
   completeOnboarding,
   getMySignal,
+  buildManualSignal,
 } from "./actions";
 
 const GENRES12 = [
@@ -37,6 +38,10 @@ export default function OnboardingPage() {
   const [prog, setProg] = useState(0);
   const [phase, setPhase] = useState(0);
 
+  // manual path (Google / phone users without Spotify data)
+  const [needsManual, setNeedsManual] = useState<boolean | null>(null);
+  const [manualArtists, setManualArtists] = useState("");
+
   // profile
   const [name, setName] = useState("");
   const [age, setAge] = useState(24);
@@ -53,13 +58,14 @@ export default function OnboardingPage() {
     getMySignal().then(({ signal, topArtists, displayName }) => {
       setSignal(signal);
       setTopArtists(topArtists);
+      setNeedsManual(signal === null); // no Spotify-derived signal → manual path
       if (displayName) setName(displayName.toUpperCase());
     });
   }, []);
 
-  // analyze animation then reveal (step 1)
+  // analyze animation then reveal (step 1) — only for the Spotify (auto) path
   useEffect(() => {
-    if (step !== 1) return;
+    if (step !== 1 || needsManual !== false) return;
     setProg(0); setPhase(0); setRevealed(false);
     let p = 0;
     const iv = setInterval(() => {
@@ -72,7 +78,7 @@ export default function OnboardingPage() {
       }
     }, 48);
     return () => clearInterval(iv);
-  }, [step]);
+  }, [step, needsManual]);
 
   const ANALYZE_LINES = [
     "READING YOUR MUSIC DNA...",
@@ -132,10 +138,33 @@ export default function OnboardingPage() {
   const photoOk = photoCount >= 3;
 
   // ---- step transitions that persist data ----
+  async function buildManual() {
+    if (genres.length < 1 || busy) return;
+    setBusy(true);
+    try {
+      const artists = manualArtists
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .slice(0, 5);
+      const { signal: s } = await buildManualSignal(genres, artists);
+      setSignal(s);
+      setTopArtists(artists.map((a) => a.toUpperCase()));
+      setRevealed(true); // jump straight to reveal (no analyze animation)
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function fromInfo() {
     setBusy(true);
-    try { await saveBasicInfo(name, age); setStep(4); }
-    finally { setBusy(false); }
+    try {
+      await saveBasicInfo(name, age);
+      // manual users already saved genres during signal build → skip genre step
+      setStep(needsManual ? 5 : 4);
+    } finally {
+      setBusy(false);
+    }
   }
   async function fromGenres() {
     setBusy(true);
@@ -167,8 +196,50 @@ export default function OnboardingPage() {
         <span>100%</span>
       </div>
 
-      {/* STEP 1 — SIGNAL REVEAL */}
-      {step === 1 && (
+      {/* STEP 1 — SIGNAL (manual build for Google users, else analyze+reveal) */}
+      {step === 1 && needsManual && !revealed && (
+        <div className="ob-screen">
+          <div className="sig-label" style={{ marginTop: 8 }}>✦ BUILD YOUR MUSIC SIGNAL</div>
+          <div className="ob-title" style={{ marginTop: 14 }}>WHAT DO YOU LISTEN TO?</div>
+          <div className="ob-sub">PICK UP TO 5 GENRES · {genres.length}/5 · WE&apos;LL CRAFT YOUR SIGNAL</div>
+          <div className="genre-grid">
+            {GENRES12.map((g) => {
+              const sel = genres.includes(g);
+              const lock = !sel && genres.length >= 5;
+              return (
+                <button
+                  key={g}
+                  className={"genre-chip" + (sel ? " on" : "")}
+                  disabled={lock}
+                  onClick={() => toggleGenre(g)}
+                >
+                  {g}
+                </button>
+              );
+            })}
+          </div>
+          <div style={{ marginTop: 18 }}>
+            <label className="label-green">FAVORITE ARTISTS (OPTIONAL)</label>
+            <input
+              value={manualArtists}
+              onChange={(e) => setManualArtists(e.target.value)}
+              placeholder="e.g. FRED AGAIN, SZA, TAME IMPALA"
+              className="mono"
+              style={{ width: "100%", marginTop: 8, background: "#0a0a0a", border: "1px solid var(--border)", borderRadius: 6, padding: "12px", color: "#fff", fontSize: 12, outline: "none" }}
+            />
+            <div className="mono" style={{ marginTop: 6, fontSize: 8, letterSpacing: ".1em", color: "var(--gray3)" }}>
+              COMMA-SEPARATED · USED ON YOUR PROFILE
+            </div>
+          </div>
+          <div style={{ flex: 1, minHeight: 16 }} />
+          <button className="btn-primary" disabled={genres.length < 1 || busy} onClick={buildManual}>
+            {busy ? "CRAFTING..." : "GENERATE MY SIGNAL →"}
+          </button>
+        </div>
+      )}
+
+      {/* STEP 1 — SIGNAL REVEAL (Spotify analyze animation, or revealed manual signal) */}
+      {step === 1 && !(needsManual && !revealed) && (
         <div className="ob-screen" style={{ justifyContent: "center", alignItems: "center", textAlign: "center" }}>
           {!revealed ? (
             <div style={{ width: "100%" }}>

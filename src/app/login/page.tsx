@@ -1,22 +1,80 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
-  async function signInWithSpotify() {
-    console.log("[LOGIN] clicked");
-    console.log("[LOGIN] url present:", !!process.env.NEXT_PUBLIC_SUPABASE_URL);
-    console.log("[LOGIN] key present:", !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+  const router = useRouter();
+  const [checking, setChecking] = useState(true);
+
+  // On mount: if an OAuth code landed here, forward it to the callback.
+  // If a session already exists (e.g. OAuth bounced back to /login),
+  // route the user straight in instead of making them click again.
+  useEffect(() => {
     const supabase = createClient();
-    const { data, error } = await supabase.auth.signInWithOAuth({
+
+    // 1. stray ?code= on /login → hand off to the real callback
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+    if (code) {
+      router.replace(`/auth/callback?code=${code}`);
+      return;
+    }
+
+    // 2. already signed in → route by onboarded status
+    (async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from("users")
+          .select("onboarded")
+          .eq("id", user.id)
+          .maybeSingle();
+        router.replace(profile?.onboarded ? "/events" : "/onboarding");
+        return;
+      }
+      setChecking(false);
+    })();
+  }, [router]);
+
+  async function signInWithSpotify() {
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: "spotify",
       options: {
         scopes: "user-top-read user-read-email",
         redirectTo: `${window.location.origin}/auth/callback`,
       },
     });
-    console.log("[LOGIN] result:", JSON.stringify({ data, error }));
-    if (error) console.error("[LOGIN] err:", error.message);
+    if (error) console.error("Spotify sign-in error:", error.message);
+  }
+
+  async function signInWithGoogle() {
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+    if (error) console.error("Google sign-in error:", error.message);
+  }
+
+  // brief loading state while we check for an existing session,
+  // so we don't flash the login buttons during an OAuth bounce
+  if (checking) {
+    return (
+      <div className="app-frame atmos-scanlines">
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <span className="mono" style={{ fontSize: 11, letterSpacing: ".15em", color: "var(--gray)" }}>
+            ● CONNECTING...
+          </span>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -64,7 +122,25 @@ export default function LoginPage() {
           <button className="btn-spotify" onClick={signInWithSpotify}>
             <span>♫</span> CONTINUE WITH SPOTIFY
           </button>
-          <p className="ob-foot-note">LA ONLY · BETA ACCESS</p>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "14px 0" }}>
+            <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
+            <span className="mono" style={{ fontSize: 9, letterSpacing: ".14em", color: "var(--gray3)" }}>OR</span>
+            <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
+          </div>
+
+          <button
+            className="btn-out"
+            onClick={signInWithGoogle}
+            style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, width: "100%" }}
+          >
+            <span style={{ fontWeight: 700 }}>G</span> CONTINUE WITH GOOGLE
+          </button>
+
+          <p className="ob-foot-note">
+            SPOTIFY AUTO-BUILDS YOUR SIGNAL · GOOGLE PICKS IT MANUALLY
+          </p>
+          <p className="ob-foot-note" style={{ marginTop: 4 }}>LA ONLY · BETA ACCESS</p>
         </div>
       </div>
     </div>

@@ -3,6 +3,35 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { generateManualSignal } from "@/lib/music-signal";
+
+// MANUAL signal build for Google / phone users (no Spotify data).
+// Generates a signal from hand-picked genres, stores signal + genres + typed artists.
+export async function buildManualSignal(
+  genres: string[],
+  artists: string[]
+): Promise<{ signal: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  const result = generateManualSignal(genres);
+
+  await supabase.from("users").update({ music_signal: result.signal }).eq("id", user.id);
+
+  await supabase.from("user_music_data").upsert(
+    {
+      user_id: user.id,
+      genres,
+      top_artists: artists.filter(Boolean).map((name) => ({ name })),
+    },
+    { onConflict: "user_id" }
+  );
+
+  return { signal: result.signal };
+}
 
 // Save basic info (name, age) to users table
 export async function saveBasicInfo(name: string, age: number) {

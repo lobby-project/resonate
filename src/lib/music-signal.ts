@@ -93,23 +93,8 @@ export function generateMusicSignal(
   }
 
   // ---- GENRE signals (fallback by dominant category) ----
-  const genreSignal: Record<string, string> = {
-    "Electronic / EDM": "Festival Dancer",
-    "Hip-Hop / Rap": "Hip-Hop Purist",
-    "Pop": "Pop Enthusiast",
-    "Rock": "Rock Devotee",
-    "R&B / Soul": "R&B Romanticist",
-    "Jazz / Blues": "Jazz Wanderer",
-    "Indie / Alternative": "Indie Explorer",
-    "Metal / Punk": "Mosh Pit Veteran",
-    "Country / Folk": "Folk Storyteller",
-    "Latin": "Latin Music Lover",
-    "Reggae": "Riddim Rider",
-    "Classical / Orchestra": "Concert Hall Regular",
-  };
-
-  if (dominantGenre && genreSignal[dominantGenre]) {
-    return done(genreSignal[dominantGenre]);
+  if (dominantGenre && GENRE_SIGNAL[dominantGenre]) {
+    return done(GENRE_SIGNAL[dominantGenre]);
   }
 
   // ---- ultimate fallback ----
@@ -118,6 +103,43 @@ export function generateMusicSignal(
   function done(signal: string): SignalResult {
     return { signal, genreDistribution: dist, dominantGenre, avgPopularity };
   }
+}
+
+// dominant-genre -> signal (shared by Spotify + manual paths)
+const GENRE_SIGNAL: Record<string, string> = {
+  "Electronic / EDM": "Festival Dancer",
+  "Hip-Hop / Rap": "Hip-Hop Purist",
+  "Pop": "Pop Enthusiast",
+  "Rock": "Rock Devotee",
+  "R&B / Soul": "R&B Romanticist",
+  "Jazz / Blues": "Jazz Wanderer",
+  "Indie / Alternative": "Indie Explorer",
+  "Metal / Punk": "Mosh Pit Veteran",
+  "Country / Folk": "Folk Storyteller",
+  "Latin": "Latin Music Lover",
+  "Reggae": "Riddim Rider",
+  "Classical / Orchestra": "Concert Hall Regular",
+};
+
+// MANUAL path: build a signal from hand-picked genres (no Spotify data).
+// Used for Google / phone-number users in onboarding.
+// genres come in any casing; we normalize to our 12 canonical categories.
+export function generateManualSignal(genres: string[]): SignalResult {
+  const canon = genres
+    .map((g) => GENRE_CATEGORIES.find((c) => c.toLowerCase() === g.trim().toLowerCase()))
+    .filter((c): c is GenreCategory => !!c);
+
+  const dist: Record<string, number> = {};
+  canon.forEach((c, i) => { dist[c] = canon.length - i; }); // first pick weighted highest
+  const dominantGenre = canon[0] ?? null;
+  const distinctGenres = canon.length;
+
+  let signal: string;
+  if (distinctGenres >= 4) signal = "Crossover Curator";
+  else if (dominantGenre && GENRE_SIGNAL[dominantGenre]) signal = GENRE_SIGNAL[dominantGenre];
+  else signal = "New Music Hunter";
+
+  return { signal, genreDistribution: dist, dominantGenre, avgPopularity: 50 };
 }
 
 // Full 25-signal catalog (for reference / validation).
