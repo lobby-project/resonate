@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toggleGoing } from "./actions";
+import { LocationPicker } from "@/components/LocationPicker";
+import { useLocation } from "@/lib/geo/LocationProvider";
+import { refreshCityEvents } from "@/lib/geo/types";
 
 const GENRES = [
   "ALL", "ELECTRONIC / EDM", "HIP-HOP / RAP", "POP", "ROCK", "R&B / SOUL",
@@ -36,10 +39,25 @@ export type FeedEvent = {
   price_min: number | null;
   genre: string | null;
   cover_url: string | null;
+  city: string | null;
+  lat: number | null;
+  lng: number | null;
   going_count: number;
   is_going: boolean;
   match: number; // 0-100 placeholder for now
 };
+
+// Great-circle distance in km between two lat/lng points (Haversine).
+function distanceKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
 
 function dayLabel(dateStr: string | null): string {
   if (!dateStr) return "UPCOMING";
@@ -58,8 +76,19 @@ export default function EventsFeed({ events }: { events: FeedEvent[] }) {
     Object.fromEntries(events.map((e) => [e.id, e.is_going]))
   );
   const router = useRouter();
+  const { location, setLocation } = useLocation();
 
-  const filtered = events.filter((e) => genre === "ALL" || e.genre === genre);
+  // Filter by Haversine distance to the active location (≤ radius_km) +
+  // genre chip. Catches neighborhoods/suburbs (Brooklyn, Hollywood, Pasadena)
+  // that strict city-name match would miss. Events with null coords are
+  // excluded when a location is set. genre comparison stays case-insensitive.
+  const filtered = events.filter((e) => {
+    if (location) {
+      if (e.lat == null || e.lng == null) return false;
+      if (distanceKm(e.lat, e.lng, location.lat, location.lng) > location.radius_km) return false;
+    }
+    return genre === "ALL" || (e.genre ?? "").toUpperCase() === genre.toUpperCase();
+  });
 
   // group by day, preserving date order
   const days: { label: string; items: FeedEvent[] }[] = [];
@@ -79,7 +108,16 @@ export default function EventsFeed({ events }: { events: FeedEvent[] }) {
     <div className="screen">
       <div className="app-head">
         <div className="brand">RESONATE</div>
-        <div className="loc"><span className="green">◢</span> LOS ANGELES</div>
+        <LocationPicker
+          current={location}
+          onChange={(loc) => {
+            setLocation(loc);
+            refreshCityEvents(loc);
+            // Re-fetch events on the server so newly-synced rows for this
+            // city show up in the feed.
+            router.refresh();
+          }}
+        />
       </div>
 
       <div className="chiprow">
@@ -100,6 +138,7 @@ export default function EventsFeed({ events }: { events: FeedEvent[] }) {
       {days.map((d) => (
         <div key={d.label}>
           <div className="day-label">{d.label}</div>
+          <div className="ev-list">
           {d.items.map((ev) => {
             const going = goingState[ev.id];
             const glow = GLOWS[ev.genre ?? ""] ?? "rgba(57,255,20,.5)";
@@ -135,6 +174,7 @@ export default function EventsFeed({ events }: { events: FeedEvent[] }) {
               </div>
             );
           })}
+          </div>
         </div>
       ))}
     </div>

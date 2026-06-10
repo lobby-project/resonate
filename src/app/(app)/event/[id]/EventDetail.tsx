@@ -76,7 +76,7 @@ export default function EventDetail({ event }: { event: DetailEvent }) {
       : "SEE TICKETS";
 
   return (
-    <div className="screen" style={{ position: "relative", paddingBottom: 120 }}>
+    <div className="screen" style={{ position: "relative", paddingBottom: 176 }}>
       <div className="backbar">
         <button className="back-btn" onClick={() => router.back()}>←</button>
         <span>EVENT</span>
@@ -156,7 +156,7 @@ export default function EventDetail({ event }: { event: DetailEvent }) {
         </a>
       )}
 
-      {/* sticky going */}
+      {/* sticky going — bottom:78 to sit above the fixed bottom nav */}
       <div className="sticky-going">
         <button className={"btn-going" + (going ? " on" : "")} disabled={busy} onClick={onToggle}>
           {going ? "✓ GOING" : "I'M GOING"}

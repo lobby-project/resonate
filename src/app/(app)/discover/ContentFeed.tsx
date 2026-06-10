@@ -83,7 +83,7 @@ export default function ContentFeed({ posts }: { posts: FeedPost[] }) {
 
   // 2-column masonry via CSS columns
   return (
-    <div style={{ columnCount: 2, columnGap: 12, paddingBottom: 24 }}>
+    <div className="feed-masonry">
       {posts.map((p) => (
         <FeedCard key={p.id} post={p} />
       ))}

@@ -22,10 +22,10 @@ export default async function DiscoverPage() {
     if (ids.length) {
       const { data: evs } = await supabase
         .from("events")
-        .select("id, artist, genre")
+        .select("id, artist, genre, cover_url")
         .in("id", ids)
         .order("event_date", { ascending: true });
-      events = (evs ?? []).map((e) => ({ id: e.id, artist: e.artist, genre: e.genre }));
+      events = (evs ?? []).map((e) => ({ id: e.id, artist: e.artist, genre: e.genre, cover_url: e.cover_url }));
     }
 
     // content feed

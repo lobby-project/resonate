@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import { Archivo_Black, Pixelify_Sans, JetBrains_Mono } from "next/font/google";
+import { Archivo_Black, VT323, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import { LocationProvider } from "@/lib/geo/LocationProvider";
 
 const archivoBlack = Archivo_Black({
   variable: "--font-archivo-black",
@@ -9,9 +10,9 @@ const archivoBlack = Archivo_Black({
   display: "swap",
 });
 
-const pixelifySans = Pixelify_Sans({
-  variable: "--font-pixelify-sans",
-  weight: ["400", "600"],
+const vt323 = VT323({
+  variable: "--font-vt323",
+  weight: "400",
   subsets: ["latin"],
   display: "swap",
 });
@@ -35,9 +36,11 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${archivoBlack.variable} ${pixelifySans.variable} ${jetbrainsMono.variable} h-full antialiased`}
+      className={`${archivoBlack.variable} ${vt323.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <LocationProvider>{children}</LocationProvider>
+      </body>
     </html>
   );
 }

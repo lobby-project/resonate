@@ -24,7 +24,7 @@ const pad3 = (n: number) => String(n).padStart(3, "0");
 
 export default function PeopleMode({ events, posts = [] }: { events: GoingEvent[]; posts?: FeedPost[] }) {
   const router = useRouter();
-  const [mode, setMode] = useState<"people" | "content">("people");
+  const [mode, setMode] = useState<"people" | "content">("content");
   const [activeEvent, setActiveEvent] = useState<string | null>(events[0]?.id ?? null);
   const [cards, setCards] = useState<Candidate[]>([]);
   const [loading, setLoading] = useState(false);
@@ -94,12 +94,26 @@ export default function PeopleMode({ events, posts = [] }: { events: GoingEvent[
             {events.map((e) => (
               <button
                 key={e.id}
-                className={"side-thumb dotgrid" + (activeEvent === e.id ? " active" : "")}
+                className={"side-thumb" + (activeEvent === e.id ? " active" : "")}
                 onClick={() => setActiveEvent(e.id)}
                 title={e.artist}
               >
-                <div className="cv-glow" style={{ background: `radial-gradient(circle at 50% 40%, ${glowFor(e.artist)}, transparent 70%)` }} />
-                <span style={{ position: "relative", zIndex: 2 }}>{e.artist[0]}</span>
+                <div className="st-media dotgrid">
+                  {(e as GoingEvent & { cover_url?: string | null }).cover_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={(e as GoingEvent & { cover_url?: string | null }).cover_url!}
+                      alt={e.artist}
+                      style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+                    />
+                  ) : (
+                    <>
+                      <div className="cv-glow" style={{ background: `radial-gradient(circle at 50% 40%, ${glowFor(e.artist)}, transparent 70%)` }} />
+                      <span style={{ position: "relative", zIndex: 2 }}>{e.artist[0]}</span>
+                    </>
+                  )}
+                </div>
+                <span className="st-name">{e.artist}</span>
               </button>
             ))}
           </div>

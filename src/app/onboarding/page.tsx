@@ -11,6 +11,9 @@ import {
   getMySignal,
   buildManualSignal,
 } from "./actions";
+import { OnboardingLocation } from "@/components/OnboardingLocation";
+import { useLocation } from "@/lib/geo/LocationProvider";
+import { refreshCityEvents } from "@/lib/geo/types";
 
 const GENRES12 = [
   "ELECTRONIC / EDM", "HIP-HOP / RAP", "POP", "ROCK",
@@ -28,8 +31,9 @@ const pad = (n: number, w = 2) => String(n).padStart(w, "0");
 type Photo = { id: number; url: string; uploading?: boolean };
 
 export default function OnboardingPage() {
-  // steps: 1 signal reveal, 2 photos, 3 info, 4 genres, 5 done
+  // steps: 1 signal reveal, 2 location, 3 photos, 4 info, 5 genres, 6 done
   const [step, setStep] = useState(1);
+  const { setLocation } = useLocation();
 
   // signal (real)
   const [signal, setSignal] = useState<string | null>(null);
@@ -161,14 +165,14 @@ export default function OnboardingPage() {
     try {
       await saveBasicInfo(name, age);
       // manual users already saved genres during signal build → skip genre step
-      setStep(needsManual ? 5 : 4);
+      setStep(needsManual ? 6 : 5);
     } finally {
       setBusy(false);
     }
   }
   async function fromGenres() {
     setBusy(true);
-    try { await saveGenres(genres); setStep(5); }
+    try { await saveGenres(genres); setStep(6); }
     finally { setBusy(false); }
   }
   async function finish() {
@@ -282,8 +286,26 @@ export default function OnboardingPage() {
         </div>
       )}
 
-      {/* STEP 2 — PHOTOS */}
+      {/* STEP 2 — LOCATION (auto geolocate; fallback to manual city search) */}
       {step === 2 && (
+        <div className="ob-screen" style={{ justifyContent: "center", textAlign: "left" }}>
+          <div className="sig-label" style={{ marginTop: 8 }}>✦ FIND YOUR SCENE</div>
+          <div className="ob-title" style={{ marginTop: 14 }}>WHERE ARE YOU?</div>
+          <div className="ob-sub">SHOWS NEAR YOU. WE&apos;LL ASK FOR LOCATION ACCESS.</div>
+          <div style={{ marginTop: 28 }}>
+            <OnboardingLocation
+              onResolved={(loc) => {
+                setLocation(loc);
+                refreshCityEvents(loc);
+                setStep(3);
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* STEP 3 — PHOTOS */}
+      {step === 3 && (
         <div className="ob-screen">
           <ObTop filled={1} tag="STEP 01 / 03" />
           <div className="ob-title">ADD YOUR PHOTOS</div>
@@ -336,12 +358,12 @@ export default function OnboardingPage() {
           </div>
 
           <div style={{ flex: 1 }} />
-          <button className="btn-primary" disabled={!photoOk} onClick={() => setStep(3)}>CONTINUE →</button>
+          <button className="btn-primary" disabled={!photoOk} onClick={() => setStep(4)}>CONTINUE →</button>
         </div>
       )}
 
-      {/* STEP 3 — INFO */}
-      {step === 3 && (
+      {/* STEP 4 — INFO */}
+      {step === 4 && (
         <div className="ob-screen">
           <ObTop filled={2} tag="STEP 02 / 03" />
           <div className="ob-title">ABOUT YOU</div>
@@ -374,14 +396,6 @@ export default function OnboardingPage() {
             </div>
           </div>
 
-          <div style={{ marginTop: 24 }}>
-            <label className="label-green">CITY</label>
-            <div className="mono row-between" style={{ marginTop: 8, background: "#0a0a0a", border: "1px solid var(--border)", borderRadius: 6, padding: "12px", color: "#fff", fontSize: 13 }}>
-              <span>📍 LOS ANGELES</span>
-              <span style={{ color: "var(--gray3)", fontSize: 9, letterSpacing: ".1em" }}>LA ONLY ▾</span>
-            </div>
-          </div>
-
           <div style={{ flex: 1 }} />
           <button className="btn-primary" disabled={!name.trim() || busy} onClick={fromInfo}>
             {busy ? "SAVING..." : "CONTINUE →"}
@@ -389,8 +403,8 @@ export default function OnboardingPage() {
         </div>
       )}
 
-      {/* STEP 4 — GENRES */}
-      {step === 4 && (
+      {/* STEP 5 — GENRES */}
+      {step === 5 && (
         <div className="ob-screen">
           <ObTop filled={3} tag="STEP 03 / 03" />
           <div className="ob-title">YOUR GENRES</div>
@@ -418,8 +432,8 @@ export default function OnboardingPage() {
         </div>
       )}
 
-      {/* STEP 5 — DONE */}
-      {step === 5 && (
+      {/* STEP 6 — DONE */}
+      {step === 6 && (
         <div className="ob-screen" style={{ justifyContent: "center", alignItems: "center", textAlign: "center" }}>
           <div style={{ width: "100%" }}>
             <div className="dot" style={{ fontSize: 40, color: "var(--green)" }}>✦</div>

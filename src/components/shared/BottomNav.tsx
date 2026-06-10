@@ -17,6 +17,7 @@ export default function BottomNav() {
 
   return (
     <div className="bottomnav">
+      <div className="nav-logo">res<span className="o">◉</span>nate</div>
       <button className={"nav-item" + (isActive("/events") ? " active" : "")} onClick={() => router.push("/events")}>
         <span className="nav-ico">📅</span>
         <span>EVENTS</span>
@@ -30,6 +31,7 @@ export default function BottomNav() {
 
       <button className="nav-plus" onClick={() => router.push("/post/new")} aria-label="Create post">
         <span style={{ fontSize: 26, lineHeight: 1 }}>+</span>
+        <span className="nav-plus-label">NEW POST</span>
       </button>
 
       <button className={"nav-item" + (isActive("/chat") ? " active" : "")} onClick={() => router.push("/chat")}>

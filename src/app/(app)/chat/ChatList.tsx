@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
-export type EventRoom = { id: string; artist: string; genre: string | null };
+export type EventRoom = { id: string; artist: string; genre: string | null; cover_url?: string | null };
 export type PrivateThread = { matchId: string; name: string; eventArtist: string | null };
 
 const GLOWS: Record<string, string> = {
@@ -30,6 +30,7 @@ export default function ChatList({
 }) {
   const [tab, setTab] = useState<"rooms" | "private">("rooms");
   const router = useRouter();
+  const pathname = usePathname();
 
   return (
     <div className="screen">
@@ -57,10 +58,21 @@ export default function ChatList({
             rooms.map((r) => {
               const glow = GLOWS[r.genre ?? ""] ?? "rgba(57,255,20,.5)";
               return (
-                <div key={r.id} className="chat-row" onClick={() => router.push(`/chat/event/${r.id}`)}>
+                <div key={r.id} className={"chat-row" + (pathname === `/chat/event/${r.id}` ? " active" : "")} onClick={() => router.push(`/chat/event/${r.id}`)}>
                   <div className="chat-ava dotgrid">
-                    <div className="cv-glow" style={{ background: `radial-gradient(circle at 50% 40%, ${glow}, transparent 70%)` }} />
-                    <span style={{ position: "relative", zIndex: 2 }}>{r.artist[0]}</span>
+                    {r.cover_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={r.cover_url}
+                        alt={r.artist}
+                        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+                      />
+                    ) : (
+                      <>
+                        <div className="cv-glow" style={{ background: `radial-gradient(circle at 50% 40%, ${glow}, transparent 70%)` }} />
+                        <span style={{ position: "relative", zIndex: 2 }}>{r.artist[0]}</span>
+                      </>
+                    )}
                   </div>
                   <div className="chat-main">
                     <div className="chat-name">{r.artist}</div>
@@ -83,7 +95,7 @@ export default function ChatList({
             </div>
           ) : (
             threads.map((t) => (
-              <div key={t.matchId} className="chat-row" onClick={() => router.push(`/chat/private/${t.matchId}`)}>
+              <div key={t.matchId} className={"chat-row" + (pathname === `/chat/private/${t.matchId}` ? " active" : "")} onClick={() => router.push(`/chat/private/${t.matchId}`)}>
                 <div className="chat-ava circle dotgrid">
                   <div className="cv-glow" style={{ background: "radial-gradient(circle at 50% 40%, rgba(57,255,20,.5), transparent 70%)" }} />
                   <span style={{ position: "relative", zIndex: 2 }}>{(t.name || "?")[0]}</span>

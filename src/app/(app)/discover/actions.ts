@@ -11,7 +11,7 @@ export type Candidate = {
   photo: string | null;
 };
 
-export type GoingEvent = { id: string; artist: string; genre: string | null };
+export type GoingEvent = { id: string; artist: string; genre: string | null; cover_url?: string | null };
 
 // service-role client (server-only) for mutual-match detection,
 // which must read the OTHER user's swipe (blocked by RLS for normal users).
