@@ -624,8 +624,9 @@ body{
   /* 假手机状态栏在桌面隐藏 */
   .statusbar{display:none;}
 
-  /* frame: 440px 手机框 → 侧栏+内容 双列网格 */
-  .app-frame{
+  /* frame: 440px 手机框 → 侧栏+内容 双列网格
+     (:has 限定:只有内部带 .bottomnav 的页面才走双列;login/onboarding 等无侧栏页面保留 440px 居中) */
+  .app-frame:has(> .bottomnav){
     max-width:1280px;
     display:grid;
     grid-template-columns:208px minmax(0,1fr);
