@@ -796,3 +796,89 @@ body{
   }
   .side-thumb.active .st-name{color:var(--green);}
 }
+
+/* ============================================================
+   TICKETING — T2:R◉SELECTED 货架 + 购票面板
+   ============================================================ */
+/* 货架 */
+.rshelf{margin:4px 0 18px;}
+.rshelf-h{display:flex; align-items:baseline; gap:10px; margin-bottom:10px;}
+.rshelf-t{font-family:var(--dot); color:var(--green); font-size:15px; letter-spacing:.18em;}
+.rshelf-t .o{color:var(--green);}
+.rshelf-sub{font-family:var(--mono); color:#555; font-size:8px; letter-spacing:.14em;}
+.rshelf-row{display:flex; gap:10px; overflow-x:auto; padding-bottom:6px; -webkit-overflow-scrolling:touch; scrollbar-width:none;}
+.rshelf-row::-webkit-scrollbar{display:none;}
+.rs-card{flex:0 0 124px; border:1px solid var(--green-dim); border-radius:9px; overflow:hidden; background:var(--panel); display:block;}
+.rs-media{position:relative; height:124px; border-bottom:1px solid var(--green-dim); display:flex; align-items:center; justify-content:center; overflow:hidden;}
+.rs-media img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover;}
+.rs-letter{font-family:var(--dot); font-size:34px; color:var(--green); opacity:.7;}
+.rs-body{padding:8px 9px;}
+.rs-name{font-family:var(--mono); color:#fff; font-size:10px; letter-spacing:.03em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:3px;}
+.rs-meta{font-family:var(--mono); color:#888; font-size:8.5px; letter-spacing:.06em;}
+
+/* feed 行上的 R◉ 角标 */
+.rbadge{font-family:var(--mono); color:var(--green); font-size:8px; letter-spacing:.08em; border:1px solid var(--green-dim); border-radius:4px; padding:1px 5px; margin-left:6px; vertical-align:middle;}
+
+/* 购票面板 */
+.buy-panel{border:1px solid var(--border); border-radius:10px; padding:16px; margin:16px 0; background:var(--panel);}
+.bp-head{font-family:var(--mono); color:#888; font-size:10px; letter-spacing:.18em; margin-bottom:12px;}
+.bp-err{border:1px solid #5c1f1f; background:rgba(224,80,80,.06); color:#e07070; border-radius:7px; padding:10px 12px; font-size:12px; margin-bottom:12px; font-family:var(--mono);}
+.bp-tier{display:flex; justify-content:space-between; align-items:center; gap:10px; border:1px solid var(--border); border-radius:8px; padding:12px; margin-bottom:8px; cursor:pointer; background:#0b0b0b;}
+.bp-tier.on{border-color:var(--green); background:rgba(57,255,20,.05);}
+.bp-tier.dead{opacity:.45; cursor:default;}
+.bpt-name{font-family:var(--mono); color:#fff; font-size:13px;}
+.bpt-desc{font-family:var(--mono); color:#888; font-size:10px; margin-top:3px;}
+.bpt-r{font-family:var(--dot); color:var(--green); font-size:18px; flex:0 0 auto;}
+.bp-row{display:flex; gap:10px;}
+.bp-field{margin-bottom:10px;}
+.bp-field.grow{flex:1;}
+.bp-field label{display:block; font-family:var(--mono); font-size:9px; letter-spacing:.14em; color:#888; margin-bottom:5px;}
+.bp-field input,.bp-field select{width:100%; background:#0b0b0b; border:1px solid var(--border); border-radius:6px; color:#fff; font-family:var(--mono); font-size:13px; padding:10px 11px; outline:none;}
+.bp-field input:focus,.bp-field select:focus{border-color:var(--green);}
+.bp-math{display:flex; justify-content:space-between; font-family:var(--mono); font-size:11px; color:#888; padding:8px 2px; border-top:1px dashed var(--border); margin-top:4px;}
+.bp-buy{width:100%; background:var(--green); border:none; color:#000; border-radius:8px; padding:14px; font-family:var(--mono); font-size:12px; letter-spacing:.12em; cursor:pointer; margin-top:8px;}
+.bp-buy:disabled{opacity:.4; cursor:default;}
+.bp-fine{font-family:var(--mono); color:#555; font-size:9.5px; line-height:1.7; margin-top:8px;}
+.bp-policy{border-top:1px dashed var(--border); margin-top:14px; padding-top:12px; font-family:var(--mono); color:#999; font-size:11px; line-height:1.7; white-space:pre-wrap;}
+.buy-success{font-family:var(--mono); color:#ccc; font-size:12px; line-height:1.9;}
+.buy-success .bs-big{font-family:var(--dot); color:var(--green); font-size:24px; margin-bottom:6px;}
+.buy-success .muted{display:block; color:#555; font-size:10px;}
+
+/* 自办活动详情页:竖版海报原比例展示(替代16:9横幅) */
+.owned-poster{display:flex; justify-content:center; margin:8px 0 14px;}
+.owned-poster img{max-width:78%; max-height:52dvh; border:1px solid var(--border); border-radius:10px;}
+@media (min-width:1024px){
+  .owned-poster img{max-width:420px;}
+  .rs-card{flex-basis:138px;}
+  .rs-media{height:138px;}
+}
+
+/* ============================================================
+   MY TICKETS — T3:二维码电子票
+   ============================================================ */
+.tk-empty{font-family:var(--mono); color:#888; font-size:12px; padding:32px 8px; line-height:1.9;}
+.tk-section{font-family:var(--mono); color:#555; font-size:10px; letter-spacing:.16em; margin:22px 2px 10px;}
+.tk-card{border:1px solid var(--green-dim); border-radius:12px; background:var(--panel); margin:14px 0; overflow:hidden;}
+.tk-card.dead{border-color:var(--border); opacity:.55;}
+.tk-top{display:flex; justify-content:space-between; gap:12px; padding:16px;}
+.tk-event{font-family:var(--mono); color:#fff; font-size:15px; margin-bottom:5px;}
+.tk-meta{font-family:var(--mono); color:#888; font-size:10.5px; letter-spacing:.05em; margin-bottom:7px;}
+.tk-tier{display:inline-block; font-family:var(--mono); color:var(--green); font-size:10px; letter-spacing:.1em; border:1px solid var(--green-dim); border-radius:99px; padding:3px 10px;}
+.tk-thumb{width:62px; height:62px; object-fit:cover; border-radius:8px; border:1px solid var(--border); flex:0 0 auto;}
+.tk-tear{display:flex; justify-content:space-between; padding:0 10px; height:1px; position:relative;}
+.tk-tear span{width:14px; border-top:1px dashed #333;}
+.tk-qr-wrap{display:flex; flex-direction:column; align-items:center; padding:18px 16px 14px;}
+.tk-qr{width:min(62vw,238px); height:auto; background:#fff; border-radius:10px; padding:8px;}
+.tk-code{font-family:var(--mono); color:#fff; font-size:13px; letter-spacing:.22em; margin-top:10px;}
+.tk-hint{font-family:var(--mono); color:#555; font-size:8.5px; letter-spacing:.22em; margin-top:4px;}
+.tk-note{font-family:var(--mono); color:#777; font-size:10.5px; line-height:1.7; border-top:1px dashed var(--border); padding:12px 16px; white-space:pre-wrap;}
+@media (min-width:1024px){ .tk-card{max-width:520px;} }
+
+/* BuyPanel:码行 + 成功链接 */
+.bp-coderow{display:flex; gap:8px;}
+.bp-coderow input{flex:1;}
+.bp-apply{background:none; border:1px solid var(--border); color:#ccc; border-radius:6px; padding:0 16px; font-family:var(--mono); font-size:10px; letter-spacing:.1em; cursor:pointer;}
+.bp-apply:hover{border-color:var(--green); color:var(--green);}
+.bp-apply:disabled{opacity:.35; cursor:default;}
+.bp-codemsg{font-family:var(--mono); font-size:10px; margin-top:6px;}
+.bs-link{display:inline-block; font-family:var(--mono); color:var(--green); font-size:11px; letter-spacing:.1em; border:1px solid var(--green-dim); border-radius:7px; padding:9px 14px; margin-top:10px;}

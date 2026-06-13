@@ -29,7 +29,7 @@ export default async function EventDetailPage({
 
   const { data: event } = await supabase
     .from("events")
-    .select("id, artist, venue, event_date, event_time, price_min, price_max, genre, cover_url, description, ticket_url")
+    .select("id, artist, venue, event_date, event_time, price_min, price_max, genre, cover_url, description, ticket_url, is_owned, poster_url")
     .eq("id", id)
     .single();
 

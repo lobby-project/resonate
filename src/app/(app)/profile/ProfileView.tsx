@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import {
   updateBasicInfo,
@@ -272,9 +273,16 @@ export default function ProfileView({ data }: { data: ProfileData }) {
       {/* SETTINGS */}
       <div className="prof-section">
         <span className="label">SETTINGS</span>
+        <Link
+          href="/tickets"
+          className="btn-out"
+          style={{ width: "100%", marginTop: 12, display: "block", textAlign: "center" }}
+        >
+          MY TICKETS
+        </Link>
         <button
           className="btn-out"
-          style={{ width: "100%", marginTop: 12 }}
+          style={{ width: "100%", marginTop: 8 }}
           onClick={() => signOut()}
         >
           LOG OUT

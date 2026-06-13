@@ -70,7 +70,7 @@ function dayLabel(dateStr: string | null): string {
   return d.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" }).toUpperCase();
 }
 
-export default function EventsFeed({ events }: { events: FeedEvent[] }) {
+export default function EventsFeed({ events, shelf }: { events: FeedEvent[]; shelf?: React.ReactNode }) {
   const [genre, setGenre] = useState("ALL");
   const [goingState, setGoingState] = useState<Record<string, boolean>>(
     Object.fromEntries(events.map((e) => [e.id, e.is_going]))
@@ -120,6 +120,8 @@ export default function EventsFeed({ events }: { events: FeedEvent[] }) {
         />
       </div>
 
+      {shelf}
+
       <div className="chiprow">
         {GENRES.map((g) => (
           <button key={g} className={"chip" + (genre === g ? " active" : "")} onClick={() => setGenre(g)}>
@@ -161,7 +163,10 @@ export default function EventsFeed({ events }: { events: FeedEvent[] }) {
                   )}
                 </div>
                 <div className="ev-body">
-                  <div className="ev-artist">{ev.artist}</div>
+                  <div className="ev-artist">
+                    {ev.artist}
+                    {(ev as { is_owned?: boolean }).is_owned && <span className="rbadge">R◉</span>}
+                  </div>
                   <div className="ev-meta">{[ev.venue, ev.event_time, price].filter(Boolean).join(" · ")}</div>
                   <div className="ev-stats">{pad(ev.going_count)} GOING · MATCH {pad(ev.match)}%</div>
                 </div>

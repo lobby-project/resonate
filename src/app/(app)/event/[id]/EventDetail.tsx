@@ -36,6 +36,8 @@ export type DetailEvent = {
   going_count: number;
   is_going: boolean;
   match: number;
+  is_owned?: boolean;
+  poster_url?: string | null;
 };
 
 function prettyDate(dateStr: string | null): string {
@@ -45,6 +47,8 @@ function prettyDate(dateStr: string | null): string {
     .toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })
     .toUpperCase();
 }
+
+import BuyPanel from "@/components/ticketing/BuyPanel";
 
 export default function EventDetail({ event }: { event: DetailEvent }) {
   const router = useRouter();
@@ -84,10 +88,10 @@ export default function EventDetail({ event }: { event: DetailEvent }) {
 
       {/* cover */}
       <div className="detail-cover dotgrid">
-        {event.cover_url ? (
+        {(event.poster_url || event.cover_url) ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={event.cover_url}
+            src={event.poster_url || event.cover_url || ""}
             alt={event.artist}
             style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.55 }}
           />
@@ -149,8 +153,17 @@ export default function EventDetail({ event }: { event: DetailEvent }) {
         </button>
       )}
 
-      {/* external ticket */}
-      {event.ticket_url && (
+      {/* 自办活动:原比例海报 + 站内购票/RSVP 面板 */}
+      {event.is_owned && event.poster_url && (
+        <div className="owned-poster">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={event.poster_url} alt={event.artist} />
+        </div>
+      )}
+      {event.is_owned && <BuyPanel eventId={event.id} />}
+
+      {/* 聚合活动:外链购票 */}
+      {!event.is_owned && event.ticket_url && (
         <a className="btn-out" href={event.ticket_url} target="_blank" rel="noopener noreferrer">
           GET TICKETS ↗
         </a>

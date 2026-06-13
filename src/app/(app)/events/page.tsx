@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import EventsFeed, { type FeedEvent } from "./EventsFeed";
+import RSelectedShelf from "@/components/ticketing/RSelectedShelf";
 
 // Server Component: fetch events + going data, pass to client feed.
 export default async function EventsPage() {
@@ -16,7 +17,7 @@ export default async function EventsPage() {
   const todayLA = new Date().toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" });
   const { data: events } = await supabase
     .from("events")
-    .select("id, artist, venue, event_date, event_time, price_min, genre, cover_url, city, lat, lng")
+    .select("id, artist, venue, event_date, event_time, price_min, genre, cover_url, city, lat, lng, is_owned")
     .gte("event_date", todayLA)
     .order("event_date", { ascending: true })
     .limit(500);
@@ -33,7 +34,7 @@ export default async function EventsPage() {
     if (user && a.user_id === user.id) myGoing.add(a.event_id);
   }
 
-  const feed: FeedEvent[] = (events ?? []).map((e) => ({
+  const feed = (events ?? []).map((e): FeedEvent & { is_owned: boolean } => ({
     id: e.id,
     artist: e.artist,
     venue: e.venue,
@@ -48,7 +49,8 @@ export default async function EventsPage() {
     going_count: goingCount[e.id] ?? 0,
     is_going: myGoing.has(e.id),
     match: 0, // TODO: compute from music signal vs event genre
+    is_owned: !!e.is_owned,
   }));
 
-  return <EventsFeed events={feed} />;
+  return <EventsFeed events={feed} shelf={<RSelectedShelf />} />;
 }
