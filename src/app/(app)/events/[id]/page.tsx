@@ -23,48 +23,50 @@ export default async function EventDetailPage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
-  const { data: event } = await supabase
-    .from("events")
-    .select("id, artist, venue, event_date, event_time, price_min, price_max, genre, cover_url, description, ticket_url, is_owned, poster_url")
-    .eq("id", id)
-    .single();
+  // getSession reads the cookie locally (no GoTrue roundtrip). proxy.ts ran
+  // getUser() and refreshed the cookie before this handler — so the session
+  // here is already validated for this request.
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user ?? null;
 
+  // Four independent queries in parallel (was: sequential await chain).
+  const [eventRes, goingCountRes, mineRes, musicRes] = await Promise.all([
+    supabase
+      .from("events")
+      .select("id, artist, venue, event_date, event_time, price_min, price_max, genre, cover_url, description, ticket_url, is_owned, poster_url")
+      .eq("id", id)
+      .single(),
+    supabase
+      .from("event_attendees")
+      .select("*", { count: "exact", head: true })
+      .eq("event_id", id),
+    user
+      ? supabase
+          .from("event_attendees")
+          .select("event_id")
+          .eq("event_id", id)
+          .eq("user_id", user.id)
+          .maybeSingle()
+      : null,
+    user
+      ? supabase
+          .from("user_music_data")
+          .select("genres")
+          .eq("user_id", user.id)
+          .maybeSingle()
+      : null,
+  ]);
+
+  const event = eventRes.data;
   if (!event) notFound();
 
-  // going count
-  const { count: goingCount } = await supabase
-    .from("event_attendees")
-    .select("*", { count: "exact", head: true })
-    .eq("event_id", id);
-
-  // am I going?
-  let isGoing = false;
-  let userGenres: string[] = [];
-  if (user) {
-    const { data: mine } = await supabase
-      .from("event_attendees")
-      .select("event_id")
-      .eq("event_id", id)
-      .eq("user_id", user.id)
-      .maybeSingle();
-    isGoing = !!mine;
-
-    const { data: music } = await supabase
-      .from("user_music_data")
-      .select("genres")
-      .eq("user_id", user.id)
-      .maybeSingle();
-    userGenres = (music?.genres as string[] | null) ?? [];
-  }
+  const userGenres = ((musicRes?.data?.genres as string[] | null) ?? []);
 
   const detail: DetailEvent = {
     ...event,
-    going_count: goingCount ?? 0,
-    is_going: isGoing,
+    going_count: goingCountRes.count ?? 0,
+    is_going: !!mineRes?.data,
     match: computeMatch(event.genre, userGenres, event.id),
   };
 
