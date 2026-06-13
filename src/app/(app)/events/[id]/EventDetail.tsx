@@ -169,8 +169,7 @@ export default function EventDetail({ event }: { event: DetailEvent }) {
         </a>
       )}
 
-      {/* sticky going — bottom:78 to sit above the fixed bottom nav */}
-      <div className="sticky-going">
+      <div style={{ marginTop: 18 }}>
         <button className={"btn-going" + (going ? " on" : "")} disabled={busy} onClick={onToggle}>
           {going ? "✓ GOING" : "I'M GOING"}
         </button>
