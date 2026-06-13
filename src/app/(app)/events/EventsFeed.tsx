@@ -146,7 +146,7 @@ export default function EventsFeed({ events, shelf }: { events: FeedEvent[]; she
             const glow = GLOWS[ev.genre ?? ""] ?? "rgba(57,255,20,.5)";
             const price = ev.price_min != null ? `$${Math.round(ev.price_min)}` : "—";
             return (
-              <div key={ev.id} className="ev-row" onClick={() => router.push(`/event/${ev.id}`)}>
+              <div key={ev.id} className="ev-row" onClick={() => router.push(`/events/${ev.id}`)}>
                 <div className="ev-cover dotgrid">
                   {ev.cover_url ? (
                     // eslint-disable-next-line @next/next/no-img-element

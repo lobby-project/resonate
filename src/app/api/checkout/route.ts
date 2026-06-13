@@ -185,8 +185,8 @@ export async function POST(req: Request) {
     mode: "payment",
     line_items: lineItems,
     metadata: { order_id: order.id, qty: String(qty), tier_id: tier.id, event_id: body.eventId, user_id: user.id },
-    success_url: `${site}/event/${body.eventId}?purchase=success`,
-    cancel_url: `${site}/event/${body.eventId}?purchase=cancel`,
+    success_url: `${site}/events/${body.eventId}?purchase=success`,
+    cancel_url: `${site}/events/${body.eventId}?purchase=cancel`,
     expires_at: Math.floor(Date.now() / 1000) + 30 * 60, // 30分钟,设计里定的"结账锁定"
   });
 

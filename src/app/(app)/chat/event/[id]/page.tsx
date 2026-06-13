@@ -24,7 +24,7 @@ export default async function EventChatPage({
 
   if (!att) {
     // not going → bounce to the event detail so they can mark going
-    redirect(`/event/${id}`);
+    redirect(`/events/${id}`);
   }
 
   const { data: event } = await supabase

@@ -45,7 +45,7 @@ export default async function RSelectedShelf() {
           const tag =
             e.location_type === "online" ? "ONLINE" : e.event_type === "rsvp" ? "RSVP" : "BUY";
           return (
-            <Link href={`/event/${e.id}`} key={e.id} className="rs-card">
+            <Link href={`/events/${e.id}`} key={e.id} className="rs-card">
               <div className="rs-media dotgrid">
                 {img ? <img src={img} alt={e[COL_TITLE]} /> : <span className="rs-letter">{(e[COL_TITLE] ?? "R")[0]}</span>}
               </div>

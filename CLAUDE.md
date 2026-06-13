@@ -59,7 +59,7 @@ src/
     (app)/                          路由组, 括号不影响 URL; 共享 shell
       layout.tsx                    shell (frame + statusbar + BottomNav)
       events/page.tsx + EventsFeed.tsx + actions.ts   feed (genre 筛选/going)
-      event/[id]/page.tsx + EventDetail.tsx + actions.ts  detail (真实 match%)
+      events/[id]/page.tsx + EventDetail.tsx + actions.ts  detail (真实 match%)
       discover/page.tsx + PeopleMode.tsx + actions.ts  People swipe (event stack + 卡 + match modal; getCandidates + swipe 含 service-role match 检测)
       chat/page.tsx + ChatList.tsx + actions.ts        列表 (Event Rooms / Private)
       chat/event/[id]/(page.tsx + EventChat.tsx)       匿名群聊 Realtime (Listener #N)

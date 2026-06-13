@@ -37,6 +37,6 @@ export async function toggleGoingDetail(eventId: string) {
     });
   }
 
-  revalidatePath(`/event/${eventId}`);
+  revalidatePath(`/events/${eventId}`);
   revalidatePath("/events");
 }
