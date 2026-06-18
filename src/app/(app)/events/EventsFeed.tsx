@@ -100,8 +100,16 @@ export default function EventsFeed({ events, shelf }: { events: FeedEvent[]; she
   }
 
   async function onToggle(id: string) {
-    setGoingState((s) => ({ ...s, [id]: !s[id] })); // optimistic
-    try { await toggleGoing(id); } catch { setGoingState((s) => ({ ...s, [id]: !s[id] })); }
+    const next = !goingState[id];
+    setGoingState((s) => ({ ...s, [id]: next })); // optimistic
+    try {
+      await toggleGoing(id);
+      // Marking going from the list drops you into the event (lands on Chat tab);
+      // un-going just stays in the feed.
+      if (next) router.push(`/events/${id}`);
+    } catch {
+      setGoingState((s) => ({ ...s, [id]: !next }));
+    }
   }
 
   return (

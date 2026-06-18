@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
-import EventDetail, { type DetailEvent } from "./EventDetail";
+import EventDetail, { type DetailEvent, type EventChatData } from "./EventDetail";
+import { type EventMsg } from "@/app/(app)/chat/event/[id]/EventChat";
 
 // Compute a match % from the user's chosen genres vs the event genre.
 // Case-insensitive (onboarding stores UPPER, events store Title Case).
@@ -44,7 +45,7 @@ export default async function EventDetailPage({
     user
       ? supabase
           .from("event_attendees")
-          .select("event_id")
+          .select("event_id, anon_num")
           .eq("event_id", id)
           .eq("user_id", user.id)
           .maybeSingle()
@@ -63,12 +64,31 @@ export default async function EventDetailPage({
 
   const userGenres = ((musicRes?.data?.genres as string[] | null) ?? []);
 
+  const isGoing = !!mineRes?.data;
+
   const detail: DetailEvent = {
     ...event,
     going_count: goingCountRes.count ?? 0,
-    is_going: !!mineRes?.data,
+    is_going: isGoing,
     match: computeMatch(event.genre, userGenres, event.id),
   };
 
-  return <EventDetail event={detail} />;
+  // Chat tab is only unlocked when going, so only load its data then. Mirrors
+  // chat/event/[id]/page.tsx (anon_num from event_attendees, last 200 msgs).
+  let chat: EventChatData | null = null;
+  if (isGoing && user) {
+    const { data: msgs } = await supabase
+      .from("event_messages")
+      .select("id, anon_num, text, user_id, created_at")
+      .eq("event_id", id)
+      .order("created_at", { ascending: true })
+      .limit(200);
+    chat = {
+      myUserId: user.id,
+      myAnonNum: (mineRes!.data as { anon_num: number | null }).anon_num ?? 0,
+      initialMessages: (msgs ?? []) as EventMsg[],
+    };
+  }
+
+  return <EventDetail event={detail} chat={chat} />;
 }

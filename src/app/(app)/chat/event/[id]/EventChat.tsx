@@ -19,12 +19,16 @@ export default function EventChat({
   myUserId,
   myAnonNum,
   initialMessages,
+  embedded = false,
 }: {
   eventId: string;
   artist: string;
   myUserId: string;
   myAnonNum: number;
   initialMessages: EventMsg[];
+  // When rendered inside the event detail Chat tab, the page already provides
+  // a back affordance + pinned bar, so we drop our own convo-head.
+  embedded?: boolean;
 }) {
   const router = useRouter();
   const supabase = createClient();
@@ -77,13 +81,15 @@ export default function EventChat({
 
   return (
     <div className="screen convo">
-      <div className="convo-head">
-        <button className="back-btn" onClick={() => router.back()}>←</button>
-        <div className="ch-info">
-          <div className="ch-name">{artist}</div>
-          <div className="ch-sub">● EVENT CHAT · ANONYMOUS</div>
+      {!embedded && (
+        <div className="convo-head">
+          <button className="back-btn" onClick={() => router.back()}>←</button>
+          <div className="ch-info">
+            <div className="ch-name">{artist}</div>
+            <div className="ch-sub">● EVENT CHAT · ANONYMOUS</div>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="msg-area">
         <div className="sys-line">— YOU ARE LISTENER #{String(myAnonNum).padStart(3, "0")} —</div>

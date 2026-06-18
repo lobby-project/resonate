@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toggleGoingDetail } from "./actions";
+import BuyPanel from "@/components/ticketing/BuyPanel";
+import EventChat, { type EventMsg } from "@/app/(app)/chat/event/[id]/EventChat";
+import SwipeDeck from "@/app/(app)/discover/SwipeDeck";
 
 const GLOWS: Record<string, string> = {
   "Electronic / EDM": "rgba(57,255,20,.5)",
@@ -40,6 +43,13 @@ export type DetailEvent = {
   poster_url?: string | null;
 };
 
+// Server-loaded data for the Chat tab (only present when already going).
+export type EventChatData = {
+  myUserId: string;
+  myAnonNum: number;
+  initialMessages: EventMsg[];
+};
+
 function prettyDate(dateStr: string | null): string {
   if (!dateStr) return "DATE TBA";
   const d = new Date(dateStr + "T00:00:00");
@@ -48,13 +58,21 @@ function prettyDate(dateStr: string | null): string {
     .toUpperCase();
 }
 
-import BuyPanel from "@/components/ticketing/BuyPanel";
+type Tab = "detail" | "chat" | "people";
 
-export default function EventDetail({ event }: { event: DetailEvent }) {
+export default function EventDetail({
+  event,
+  chat,
+}: {
+  event: DetailEvent;
+  chat: EventChatData | null;
+}) {
   const router = useRouter();
   const [going, setGoing] = useState(event.is_going);
   const [count, setCount] = useState(event.going_count);
   const [busy, setBusy] = useState(false);
+  // Going unlocks the tabs; navigation always defaults to Detail.
+  const [tab, setTab] = useState<Tab>("detail");
   const glow = GLOWS[event.genre ?? ""] ?? "rgba(57,255,20,.5)";
 
   async function onToggle() {
@@ -64,6 +82,13 @@ export default function EventDetail({ event }: { event: DetailEvent }) {
     setCount((c) => c + (next ? 1 : -1));
     try {
       await toggleGoingDetail(event.id);
+      if (next) {
+        // Unlock tabs but stay on Detail; refresh pulls the now-available chat
+        // data (anon_num + messages) from the server without leaving the page.
+        router.refresh();
+      } else {
+        setTab("detail");
+      }
     } catch {
       setGoing(!next);
       setCount((c) => c + (next ? -1 : 1));
@@ -79,13 +104,9 @@ export default function EventDetail({ event }: { event: DetailEvent }) {
         : `$${Math.round(event.price_min)}`
       : "SEE TICKETS";
 
-  return (
-    <div className="screen" style={{ position: "relative", paddingBottom: 176 }}>
-      <div className="backbar">
-        <button className="back-btn" onClick={() => router.back()}>←</button>
-        <span>EVENT</span>
-      </div>
-
+  // ----- Detail content (poster / info / BuyPanel / going button) — unchanged -----
+  const detailBody = (
+    <>
       {/* cover */}
       <div className="detail-cover dotgrid">
         {(event.poster_url || event.cover_url) ? (
@@ -142,17 +163,6 @@ export default function EventDetail({ event }: { event: DetailEvent }) {
 
       <hr className="dashed" />
 
-      {/* event chat entry — only if going */}
-      {going && (
-        <button
-          className="btn-link"
-          style={{ display: "block", width: "100%", textAlign: "left", padding: "6px 0 16px" }}
-          onClick={() => router.push(`/chat/event/${event.id}`)}
-        >
-          ▸ ENTER EVENT CHAT (ANONYMOUS) →
-        </button>
-      )}
-
       {/* 自办活动:原比例海报 + 站内购票/RSVP 面板 */}
       {event.is_owned && event.poster_url && (
         <div className="owned-poster">
@@ -173,6 +183,94 @@ export default function EventDetail({ event }: { event: DetailEvent }) {
         <button className={"btn-going" + (going ? " on" : "")} disabled={busy} onClick={onToggle}>
           {going ? "✓ GOING" : "I'M GOING"}
         </button>
+      </div>
+    </>
+  );
+
+  // ----- Chat tab: pinned bar (venue + start time) above the anonymous chat -----
+  const chatBody = (
+    <>
+      <div
+        style={{
+          flex: "0 0 auto",
+          display: "flex",
+          gap: 10,
+          alignItems: "center",
+          margin: "8px 18px 0",
+          padding: "10px 12px",
+          background: "var(--panel)",
+          border: "1px solid var(--border)",
+          borderLeft: "2px solid var(--green)",
+          borderRadius: 8,
+        }}
+      >
+        <span className="dot green" style={{ fontSize: 14, lineHeight: 1 }}>●</span>
+        <div style={{ minWidth: 0 }}>
+          <div className="mono" style={{ fontSize: 11, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            {event.venue ?? "VENUE TBA"}
+          </div>
+          <div className="mono" style={{ fontSize: 9, letterSpacing: ".1em", color: "var(--gray)", marginTop: 2 }}>
+            {prettyDate(event.event_date)}{event.event_time ? ` · ${event.event_time}` : ""}
+          </div>
+        </div>
+      </div>
+      {chat ? (
+        <EventChat
+          embedded
+          eventId={event.id}
+          artist={event.artist}
+          myUserId={chat.myUserId}
+          myAnonNum={chat.myAnonNum}
+          initialMessages={chat.initialMessages}
+        />
+      ) : (
+        <div className="screen convo" style={{ justifyContent: "center", alignItems: "center" }}>
+          <div className="empty">CONNECTING… ●</div>
+        </div>
+      )}
+    </>
+  );
+
+  return (
+    <div style={{ flex: "1 1 auto", minHeight: 0, display: "flex", flexDirection: "column", minWidth: 0 }}>
+      {/* fixed header: back + (when going) tab bar */}
+      <div style={{ flex: "0 0 auto", padding: "4px 18px 0" }}>
+        <div className="backbar">
+          {/* From Chat/People, back returns to this event's Detail; from Detail
+              it leaves the page. Keeps tab nav inside the event. */}
+          <button
+            className="back-btn"
+            onClick={() => { if (tab !== "detail") setTab("detail"); else router.back(); }}
+          >
+            ←
+          </button>
+          <span>EVENT</span>
+        </div>
+        {going && (
+          <div className="subtabs">
+            <button className={"subtab" + (tab === "detail" ? " active" : "")} onClick={() => setTab("detail")}>DETAIL</button>
+            <button className={"subtab" + (tab === "chat" ? " active" : "")} onClick={() => setTab("chat")}>CHAT</button>
+            <button className={"subtab" + (tab === "people" ? " active" : "")} onClick={() => setTab("people")}>PEOPLE</button>
+          </div>
+        )}
+      </div>
+
+      {/* tab content area */}
+      <div style={{ flex: "1 1 auto", minHeight: 0, display: "flex", flexDirection: "column", minWidth: 0 }}>
+        {/* not going → only Detail; going → switch by tab */}
+        {(!going || tab === "detail") && (
+          <div className="screen" style={{ paddingTop: 8 }}>
+            {detailBody}
+          </div>
+        )}
+        {going && tab === "chat" && chatBody}
+        {going && tab === "people" && (
+          <div className="screen noscroll">
+            <div className="people-wrap">
+              <SwipeDeck eventId={event.id} />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
