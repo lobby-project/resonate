@@ -4,6 +4,10 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
+// Spotify entry temporarily hidden (dev-mode 5-user wall). OAuth/callback/onboarding
+// Spotify path are all left intact — flip this back to `true` to restore the button.
+const SHOW_SPOTIFY = false;
+
 export default function LoginPage() {
   const router = useRouter();
   const [checking, setChecking] = useState(true);
@@ -119,26 +123,30 @@ export default function LoginPage() {
         </div>
 
         <div>
-          <button className="btn-spotify" onClick={signInWithSpotify}>
-            <span>♫</span> CONTINUE WITH SPOTIFY
-          </button>
+          {SHOW_SPOTIFY && (
+            <>
+              <button className="btn-spotify" onClick={signInWithSpotify}>
+                <span>♫</span> CONTINUE WITH SPOTIFY
+              </button>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "14px 0" }}>
-            <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
-            <span className="mono" style={{ fontSize: 9, letterSpacing: ".14em", color: "var(--gray3)" }}>OR</span>
-            <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
-          </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "14px 0" }}>
+                <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
+                <span className="mono" style={{ fontSize: 9, letterSpacing: ".14em", color: "var(--gray3)" }}>OR</span>
+                <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
+              </div>
+            </>
+          )}
 
           <button
-            className="btn-out"
+            className="btn-primary"
             onClick={signInWithGoogle}
-            style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, width: "100%" }}
+            style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, width: "100%", fontSize: 14, padding: "18px" }}
           >
             <span style={{ fontWeight: 700 }}>G</span> CONTINUE WITH GOOGLE
           </button>
 
           <p className="ob-foot-note">
-            SPOTIFY AUTO-BUILDS YOUR SIGNAL · GOOGLE PICKS IT MANUALLY
+            PICK YOUR GENRES · WE&apos;LL BUILD YOUR MUSIC SIGNAL
           </p>
           <p className="ob-foot-note" style={{ marginTop: 4 }}>LA ONLY · BETA ACCESS</p>
         </div>
