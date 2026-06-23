@@ -4,21 +4,34 @@ import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import {
   saveBasicInfo,
-  saveGenres,
+  saveGenresWithSignal,
   savePhotoUrl,
   removePhotoUrl,
   completeOnboarding,
-  getMySignal,
-  buildManualSignal,
+  getProfileBasics,
 } from "./actions";
 import { OnboardingLocation } from "@/components/OnboardingLocation";
 import { useLocation } from "@/lib/geo/LocationProvider";
-import { refreshCityEvents } from "@/lib/geo/types";
+import { refreshCityEvents, type ActiveLocation } from "@/lib/geo/types";
 
-const GENRES12 = [
-  "ELECTRONIC / EDM", "HIP-HOP / RAP", "POP", "ROCK",
-  "R&B / SOUL", "JAZZ / BLUES", "INDIE / ALTERNATIVE", "METAL / PUNK",
-  "COUNTRY / FOLK", "LATIN", "REGGAE", "CLASSICAL / ORCHESTRA",
+// EDM is offered as sub-genres; every other big category stays coarse.
+// On save the client rolls any EDM sub-genre up to "ELECTRONIC / EDM" so that
+// profile display / events filter / match% (which only know the 12 big
+// categories) keep working — see saveGenreStep().
+const EDM_SUBGENRES = ["TECHNO", "HOUSE", "TRANCE", "BASS", "DUBSTEP", "FUTURE BASS"];
+const OTHER_GENRES = [
+  "HIP-HOP / RAP", "POP", "ROCK", "R&B / SOUL", "JAZZ / BLUES",
+  "INDIE / ALTERNATIVE", "METAL / PUNK", "COUNTRY / FOLK", "LATIN",
+  "REGGAE", "CLASSICAL / ORCHESTRA",
+];
+const GENRE_OPTIONS = [...EDM_SUBGENRES, ...OTHER_GENRES];
+const EDM_BIG = "ELECTRONIC / EDM";
+
+const GENDERS: [string, string][] = [
+  ["male", "MALE"],
+  ["female", "FEMALE"],
+  ["nonbinary", "NON-BINARY"],
+  ["undisclosed", "PREFER NOT TO SAY"],
 ];
 
 const GLOWS = [
@@ -26,82 +39,70 @@ const GLOWS = [
   "rgba(40,220,220,.5)", "rgba(255,180,40,.5)", "rgba(255,60,60,.5)",
 ];
 
+const MAX_PHOTOS = 6;
+const MIN_PHOTOS = 1;
 const pad = (n: number, w = 2) => String(n).padStart(w, "0");
 
 type Photo = { id: number; url: string; uploading?: boolean };
 
+// 3-dot step progress header
+function ObTop({ filled, tag }: { filled: number; tag: string }) {
+  return (
+    <div className="ob-progress" style={{ justifyContent: "space-between", alignItems: "center" }}>
+      <div style={{ display: "flex", gap: 6 }}>
+        {[0, 1, 2].map((i) => (
+          <div key={i} className={"ob-dot" + (i < filled ? " on" : "")} />
+        ))}
+      </div>
+      <span className="ob-step-tag">{tag}</span>
+    </div>
+  );
+}
+
 export default function OnboardingPage() {
-  // steps: 1 signal reveal, 2 location, 3 photos, 4 info, 5 genres, 6 done
+  // 3 screens: 1 profile · 2 genres · 3 photos
   const [step, setStep] = useState(1);
   const { setLocation } = useLocation();
 
-  // signal (real)
-  const [signal, setSignal] = useState<string | null>(null);
-  const [topArtists, setTopArtists] = useState<string[]>([]);
-  const [revealed, setRevealed] = useState(false);
-  const [prog, setProg] = useState(0);
-  const [phase, setPhase] = useState(0);
-
-  // manual path (Google / phone users without Spotify data)
-  const [needsManual, setNeedsManual] = useState<boolean | null>(null);
-  const [manualArtists, setManualArtists] = useState("");
-
   // profile
+  const [location, setLoc] = useState<ActiveLocation | null>(null);
   const [name, setName] = useState("");
   const [age, setAge] = useState(24);
+  const [gender, setGender] = useState("");
+  const [ig, setIg] = useState("");
+
+  // genres + photos
   const [genres, setGenres] = useState<string[]>([]);
   const [photos, setPhotos] = useState<Photo[]>([]);
   const photoIdRef = useRef(1);
+  const photosRef = useRef<Photo[]>([]);
   const [popId, setPopId] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
 
   const supabase = createClient();
 
-  // fetch real signal on mount
+  useEffect(() => { photosRef.current = photos; }, [photos]);
+
+  // prefill name from an existing profile (e.g. Google display name)
   useEffect(() => {
-    getMySignal().then(({ signal, topArtists, displayName }) => {
-      setSignal(signal);
-      setTopArtists(topArtists);
-      setNeedsManual(signal === null); // no Spotify-derived signal → manual path
+    getProfileBasics().then(({ displayName }) => {
       if (displayName) setName(displayName.toUpperCase());
     });
   }, []);
 
-  // analyze animation then reveal (step 1) — only for the Spotify (auto) path
-  useEffect(() => {
-    if (step !== 1 || needsManual !== false) return;
-    setProg(0); setPhase(0); setRevealed(false);
-    let p = 0;
-    const iv = setInterval(() => {
-      p += 2;
-      setProg(Math.min(p, 100));
-      setPhase(p < 34 ? 0 : p < 68 ? 1 : 2);
-      if (p >= 100) {
-        clearInterval(iv);
-        setTimeout(() => setRevealed(true), 350);
-      }
-    }, 48);
-    return () => clearInterval(iv);
-  }, [step, needsManual]);
-
-  const ANALYZE_LINES = [
-    "READING YOUR MUSIC DNA...",
-    "ANALYZING YOUR TOP ARTISTS...",
-    "CALCULATING YOUR SIGNAL...",
-  ];
-
   // ---- photo upload to Supabase Storage ----
   async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files;
-    if (!files || photos.length >= 5) return;
+    if (!files || photos.length >= MAX_PHOTOS) return;
     const {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) return;
 
     for (const file of Array.from(files)) {
-      if (photos.length >= 5) break;
+      if (photosRef.current.length >= MAX_PHOTOS) break;
       const id = photoIdRef.current++;
+      const sortOrder = photosRef.current.length;
       setPopId(id);
       setTimeout(() => setPopId(null), 950);
 
@@ -122,7 +123,7 @@ export default function OnboardingPage() {
       const { data: pub } = supabase.storage.from("user-photos").getPublicUrl(path);
       const url = pub.publicUrl;
       setPhotos((p) => p.map((x) => (x.id === id ? { ...x, url, uploading: false } : x)));
-      await savePhotoUrl(url, id);
+      await savePhotoUrl(url, sortOrder);
     }
     e.target.value = "";
   }
@@ -139,75 +140,155 @@ export default function OnboardingPage() {
     );
 
   const photoCount = photos.length;
-  const photoOk = photoCount >= 3;
+  const photoOk = photoCount >= MIN_PHOTOS;
+  const canContinueProfile = !!name.trim() && !!gender && !!location;
 
   // ---- step transitions that persist data ----
-  async function buildManual() {
+  async function saveProfile() {
+    if (!canContinueProfile || busy) return;
+    setBusy(true);
+    try {
+      await saveBasicInfo(name, age, gender, ig);
+      setStep(2);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function saveGenreStep() {
     if (genres.length < 1 || busy) return;
     setBusy(true);
     try {
-      const artists = manualArtists
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean)
-        .slice(0, 5);
-      const { signal: s } = await buildManualSignal(genres, artists);
-      setSignal(s);
-      setTopArtists(artists.map((a) => a.toUpperCase()));
-      setRevealed(true); // jump straight to reveal (no analyze animation)
+      const rolled = genres.some((g) => EDM_SUBGENRES.includes(g))
+        ? [...genres, EDM_BIG]
+        : genres;
+      await saveGenresWithSignal(rolled);
+      setStep(3);
     } finally {
       setBusy(false);
     }
   }
 
-  async function fromInfo() {
+  async function finish() {
+    if (!photoOk || busy) return;
     setBusy(true);
     try {
-      await saveBasicInfo(name, age);
-      // manual users already saved genres during signal build → skip genre step
-      setStep(needsManual ? 6 : 5);
+      await completeOnboarding(); // redirects to /events
     } finally {
       setBusy(false);
     }
   }
-  async function fromGenres() {
-    setBusy(true);
-    try { await saveGenres(genres); setStep(6); }
-    finally { setBusy(false); }
-  }
-  async function finish() {
-    setBusy(true);
-    try { await completeOnboarding(); } // redirects to /events
-    finally { setBusy(false); }
-  }
 
-  const ObTop = ({ filled, tag }: { filled: number; tag: string }) => (
-    <div className="ob-progress" style={{ justifyContent: "space-between", alignItems: "center" }}>
-      <div style={{ display: "flex", gap: 6 }}>
-        {[0, 1, 2].map((i) => (
-          <div key={i} className={"ob-dot" + (i < filled ? " on" : "")} />
-        ))}
-      </div>
-      <span className="ob-step-tag">{tag}</span>
-    </div>
-  );
+  const inputStyle: React.CSSProperties = {
+    width: "100%", marginTop: 8, background: "#0a0a0a",
+    border: "1px solid var(--border)", borderRadius: 6, padding: "12px",
+    color: "#fff", fontSize: 13, outline: "none",
+  };
 
   return (
     <div className="app-frame atmos-scanlines">
-      <div className="statusbar">
-        <span>9:41</span>
-        <span className="sb-dots">● ● ● ●</span>
-        <span>100%</span>
-      </div>
-
-      {/* STEP 1 — SIGNAL (manual build for Google users, else analyze+reveal) */}
-      {step === 1 && needsManual && !revealed && (
+      {/* STEP 1 — PROFILE (location + name + age + gender + IG, one screen) */}
+      {step === 1 && (
         <div className="ob-screen">
-          <div className="sig-label" style={{ marginTop: 8 }}>✦ BUILD YOUR MUSIC SIGNAL</div>
-          <div className="ob-title" style={{ marginTop: 14 }}>WHAT DO YOU LISTEN TO?</div>
-          <div className="ob-sub">PICK UP TO 5 GENRES · {genres.length}/5 · WE&apos;LL CRAFT YOUR SIGNAL</div>
+          <ObTop filled={1} tag="STEP 01 / 03" />
+          <div className="ob-title">YOUR PROFILE</div>
+          <div className="ob-sub">ONE SCREEN. KEEP IT REAL.</div>
+
+          {/* location */}
+          <div style={{ marginTop: 22 }}>
+            <label className="label-green">LOCATION</label>
+            {!location ? (
+              <div style={{ marginTop: 10 }}>
+                <OnboardingLocation
+                  onResolved={(loc) => {
+                    setLoc(loc);
+                    setLocation(loc);
+                    refreshCityEvents(loc);
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="row-between" style={{ marginTop: 10 }}>
+                <span className="mono" style={{ fontSize: 12, color: "var(--green)" }}>
+                  ✓ {location.display_name.toUpperCase()}
+                </span>
+                <button className="btn-link" onClick={() => setLoc(null)}>CHANGE</button>
+              </div>
+            )}
+          </div>
+
+          {/* name */}
+          <div style={{ marginTop: 22 }}>
+            <label className="label-green">NAME</label>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value.toUpperCase())}
+              maxLength={20}
+              placeholder="YOUR NAME"
+              className="mono"
+              style={inputStyle}
+            />
+          </div>
+
+          {/* age */}
+          <div style={{ marginTop: 22 }}>
+            <div className="row-between">
+              <label className="label-green">AGE</label>
+              <span className="dot" style={{ color: "var(--green)", fontSize: 18 }}>{age}</span>
+            </div>
+            <input
+              type="range" min={18} max={32} value={age}
+              onChange={(e) => setAge(+e.target.value)}
+              style={{ width: "100%", marginTop: 12, accentColor: "var(--green)" }}
+            />
+            <div className="row-between mono" style={{ fontSize: 9, color: "var(--gray3)" }}>
+              <span>18</span><span>32</span>
+            </div>
+          </div>
+
+          {/* gender */}
+          <div style={{ marginTop: 22 }}>
+            <label className="label-green">GENDER</label>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 10 }}>
+              {GENDERS.map(([val, lbl]) => (
+                <button
+                  key={val}
+                  className={"genre-chip" + (gender === val ? " on" : "")}
+                  onClick={() => setGender(val)}
+                >
+                  {lbl}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* IG (optional) */}
+          <div style={{ marginTop: 22 }}>
+            <label className="label-green">INSTAGRAM (OPTIONAL)</label>
+            <input
+              value={ig}
+              onChange={(e) => setIg(e.target.value)}
+              placeholder="@YOURHANDLE"
+              className="mono"
+              style={inputStyle}
+            />
+          </div>
+
+          <div style={{ flex: 1, minHeight: 24 }} />
+          <button className="btn-primary" disabled={!canContinueProfile || busy} onClick={saveProfile}>
+            {busy ? "SAVING..." : "CONTINUE →"}
+          </button>
+        </div>
+      )}
+
+      {/* STEP 2 — GENRES (EDM split into sub-genres, others coarse) */}
+      {step === 2 && (
+        <div className="ob-screen">
+          <ObTop filled={2} tag="STEP 02 / 03" />
+          <div className="ob-title">YOUR GENRES</div>
+          <div className="ob-sub">PICK UP TO 5 · {genres.length}/5 SELECTED</div>
           <div className="genre-grid">
-            {GENRES12.map((g) => {
+            {GENRE_OPTIONS.map((g) => {
               const sel = genres.includes(g);
               const lock = !sel && genres.length >= 5;
               return (
@@ -222,94 +303,19 @@ export default function OnboardingPage() {
               );
             })}
           </div>
-          <div style={{ marginTop: 18 }}>
-            <label className="label-green">FAVORITE ARTISTS (OPTIONAL)</label>
-            <input
-              value={manualArtists}
-              onChange={(e) => setManualArtists(e.target.value)}
-              placeholder="e.g. FRED AGAIN, SZA, TAME IMPALA"
-              className="mono"
-              style={{ width: "100%", marginTop: 8, background: "#0a0a0a", border: "1px solid var(--border)", borderRadius: 6, padding: "12px", color: "#fff", fontSize: 12, outline: "none" }}
-            />
-            <div className="mono" style={{ marginTop: 6, fontSize: 8, letterSpacing: ".1em", color: "var(--gray3)" }}>
-              COMMA-SEPARATED · USED ON YOUR PROFILE
-            </div>
-          </div>
           <div style={{ flex: 1, minHeight: 16 }} />
-          <button className="btn-primary" disabled={genres.length < 1 || busy} onClick={buildManual}>
-            {busy ? "CRAFTING..." : "GENERATE MY SIGNAL →"}
+          <button className="btn-primary" disabled={genres.length < 1 || busy} onClick={saveGenreStep}>
+            {busy ? "SAVING..." : "CONTINUE →"}
           </button>
         </div>
       )}
 
-      {/* STEP 1 — SIGNAL REVEAL (Spotify analyze animation, or revealed manual signal) */}
-      {step === 1 && !(needsManual && !revealed) && (
-        <div className="ob-screen" style={{ justifyContent: "center", alignItems: "center", textAlign: "center" }}>
-          {!revealed ? (
-            <div style={{ width: "100%" }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 32 }}>
-                {ANALYZE_LINES.map((l, i) => (
-                  <div
-                    key={i}
-                    className="mono"
-                    style={{
-                      fontSize: 11, letterSpacing: ".14em",
-                      color: i === phase ? "var(--green)" : i < phase ? "#666" : "#333",
-                    }}
-                  >
-                    ▸ {l}
-                  </div>
-                ))}
-              </div>
-              <div style={{ width: 200, height: 2, background: "var(--border)", margin: "0 auto", borderRadius: 2, overflow: "hidden" }}>
-                <div style={{ height: "100%", background: "var(--green)", width: prog + "%", transition: "width .1s linear" }} />
-              </div>
-              <div className="mono" style={{ marginTop: 10, fontSize: 11, color: "var(--green)" }}>{pad(prog)}%</div>
-            </div>
-          ) : (
-            <div style={{ animation: "fadeIn .5s ease" }}>
-              <div className="sig-label">✦ YOUR MUSIC SIGNAL</div>
-              <div className="sig-name" style={{ margin: "18px 0" }}>
-                {(signal ?? "NEW MUSIC HUNTER").toUpperCase()}
-              </div>
-              {topArtists.length > 0 && (
-                <div className="sig-driven">
-                  DRIVEN BY <b>{topArtists.join(", ").toUpperCase()}</b>
-                </div>
-              )}
-              <div className="ob-foot-note" style={{ marginTop: 22 }}>✦ ONE OF 25 RESONATE SIGNALS</div>
-              <div style={{ marginTop: 36 }}>
-                <button className="btn-primary" onClick={() => setStep(2)}>CONTINUE →</button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* STEP 2 — LOCATION (auto geolocate; fallback to manual city search) */}
-      {step === 2 && (
-        <div className="ob-screen" style={{ justifyContent: "center", textAlign: "left" }}>
-          <div className="sig-label" style={{ marginTop: 8 }}>✦ FIND YOUR SCENE</div>
-          <div className="ob-title" style={{ marginTop: 14 }}>WHERE ARE YOU?</div>
-          <div className="ob-sub">SHOWS NEAR YOU. WE&apos;LL ASK FOR LOCATION ACCESS.</div>
-          <div style={{ marginTop: 28 }}>
-            <OnboardingLocation
-              onResolved={(loc) => {
-                setLocation(loc);
-                refreshCityEvents(loc);
-                setStep(3);
-              }}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* STEP 3 — PHOTOS */}
+      {/* STEP 3 — PHOTOS (original grid UI; min 1, max 6) */}
       {step === 3 && (
         <div className="ob-screen">
-          <ObTop filled={1} tag="STEP 01 / 03" />
+          <ObTop filled={3} tag="STEP 03 / 03" />
           <div className="ob-title">ADD YOUR PHOTOS</div>
-          <div className="ob-sub">3–5 PHOTOS. AT LEAST ONE CLEAR FACE. LIFESTYLE &amp; SHOW PHOTOS WELCOME.</div>
+          <div className="ob-sub">1–6 PHOTOS · AT LEAST ONE CLEAR FACE. LIFESTYLE &amp; SHOW PHOTOS WELCOME.</div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginTop: 24 }}>
             {photos.map((p, i) => (
@@ -337,7 +343,7 @@ export default function OnboardingPage() {
                 >×</button>
               </div>
             ))}
-            {photoCount < 5 && (
+            {photoCount < MAX_PHOTOS && (
               <label
                 className="dotgrid"
                 style={{
@@ -354,109 +360,13 @@ export default function OnboardingPage() {
           </div>
 
           <div className="mono" style={{ marginTop: 12, fontSize: 9, letterSpacing: ".1em", color: photoOk ? "var(--green)" : "var(--gray3)" }}>
-            {photoOk ? `${photoCount}/5 ADDED · ✓ READY` : `${photoCount}/5 ADDED · NEED ${3 - photoCount} MORE`}
+            {photoOk ? `${photoCount}/${MAX_PHOTOS} ADDED · ✓ READY` : `${photoCount}/${MAX_PHOTOS} ADDED · NEED AT LEAST ${MIN_PHOTOS}`}
           </div>
 
-          <div style={{ flex: 1 }} />
-          <button className="btn-primary" disabled={!photoOk} onClick={() => setStep(4)}>CONTINUE →</button>
-        </div>
-      )}
-
-      {/* STEP 4 — INFO */}
-      {step === 4 && (
-        <div className="ob-screen">
-          <ObTop filled={2} tag="STEP 02 / 03" />
-          <div className="ob-title">ABOUT YOU</div>
-          <div className="ob-sub">THE BASICS. KEEP IT REAL.</div>
-
-          <div style={{ marginTop: 26 }}>
-            <label className="label-green">NAME</label>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value.toUpperCase())}
-              maxLength={20}
-              placeholder="YOUR NAME"
-              className="mono"
-              style={{ width: "100%", marginTop: 8, background: "#0a0a0a", border: "1px solid var(--border)", borderRadius: 6, padding: "12px", color: "#fff", fontSize: 13, outline: "none" }}
-            />
-          </div>
-
-          <div style={{ marginTop: 24 }}>
-            <div className="row-between">
-              <label className="label-green">AGE</label>
-              <span className="dot" style={{ color: "var(--green)", fontSize: 18 }}>{age}</span>
-            </div>
-            <input
-              type="range" min={18} max={32} value={age}
-              onChange={(e) => setAge(+e.target.value)}
-              style={{ width: "100%", marginTop: 12, accentColor: "var(--green)" }}
-            />
-            <div className="row-between mono" style={{ fontSize: 9, color: "var(--gray3)" }}>
-              <span>18</span><span>32</span>
-            </div>
-          </div>
-
-          <div style={{ flex: 1 }} />
-          <button className="btn-primary" disabled={!name.trim() || busy} onClick={fromInfo}>
-            {busy ? "SAVING..." : "CONTINUE →"}
-          </button>
-        </div>
-      )}
-
-      {/* STEP 5 — GENRES */}
-      {step === 5 && (
-        <div className="ob-screen">
-          <ObTop filled={3} tag="STEP 03 / 03" />
-          <div className="ob-title">YOUR GENRES</div>
-          <div className="ob-sub">PICK UP TO 5 · {genres.length}/5 SELECTED</div>
-          <div className="genre-grid">
-            {GENRES12.map((g) => {
-              const sel = genres.includes(g);
-              const lock = !sel && genres.length >= 5;
-              return (
-                <button
-                  key={g}
-                  className={"genre-chip" + (sel ? " on" : "")}
-                  disabled={lock}
-                  onClick={() => toggleGenre(g)}
-                >
-                  {g}
-                </button>
-              );
-            })}
-          </div>
           <div style={{ flex: 1, minHeight: 16 }} />
-          <button className="btn-primary" disabled={genres.length < 1 || busy} onClick={fromGenres}>
-            {busy ? "SAVING..." : "CONTINUE →"}
+          <button className="btn-primary" disabled={!photoOk || busy} onClick={finish}>
+            {busy ? "ENTERING..." : "ENTER RESONATE →"}
           </button>
-        </div>
-      )}
-
-      {/* STEP 6 — DONE */}
-      {step === 6 && (
-        <div className="ob-screen" style={{ justifyContent: "center", alignItems: "center", textAlign: "center" }}>
-          <div style={{ width: "100%" }}>
-            <div className="dot" style={{ fontSize: 40, color: "var(--green)" }}>✦</div>
-            <div className="ob-title" style={{ marginTop: 12 }}>YOU&apos;RE IN</div>
-            <div style={{ marginTop: 24, border: "1px dashed var(--border)", borderRadius: 8, padding: 18, textAlign: "left" }}>
-              {[
-                ["WELCOME", (name.trim() || "FRIEND").toUpperCase(), true],
-                ["SIGNAL", (signal ?? "NEW MUSIC HUNTER").toUpperCase(), false],
-                ["GENRES", `${pad(genres.length)} SELECTED`, false],
-                ["PHOTOS", `${pad(photoCount)} ADDED`, false],
-              ].map(([k, v, gr]) => (
-                <div key={k as string} className="row-between mono" style={{ fontSize: 10, padding: "7px 0", letterSpacing: ".08em" }}>
-                  <span style={{ color: "var(--gray3)" }}>{k}</span>
-                  <span style={{ color: gr ? "var(--green)" : "#fff" }}>{v}</span>
-                </div>
-              ))}
-            </div>
-            <div style={{ marginTop: 32 }}>
-              <button className="btn-primary" disabled={busy} onClick={finish}>
-                {busy ? "ENTERING..." : "ENTER RESONATE →"}
-              </button>
-            </div>
-          </div>
         </div>
       )}
     </div>

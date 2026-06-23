@@ -5,64 +5,61 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { generateManualSignal } from "@/lib/music-signal";
 
-// MANUAL signal build for Google / phone users (no Spotify data).
-// Generates a signal from hand-picked genres, stores signal + genres + typed artists.
-export async function buildManualSignal(
-  genres: string[],
-  artists: string[]
-): Promise<{ signal: string }> {
+// Save profile basics (name, age, gender, optional IG handle) to users table.
+export async function saveBasicInfo(
+  name: string,
+  age: number,
+  gender: string,
+  igHandle: string
+) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
-  const result = generateManualSignal(genres);
-
-  await supabase.from("users").update({ music_signal: result.signal }).eq("id", user.id);
-
-  await supabase.from("user_music_data").upsert(
-    {
-      user_id: user.id,
-      genres,
-      top_artists: artists.filter(Boolean).map((name) => ({ name })),
-    },
-    { onConflict: "user_id" }
-  );
-
-  return { signal: result.signal };
-}
-
-// Save basic info (name, age) to users table
-export async function saveBasicInfo(name: string, age: number) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
+  // normalize IG: strip a leading @, blank → null
+  const ig = igHandle.trim().replace(/^@+/, "");
 
   const { error } = await supabase
     .from("users")
-    .update({ display_name: name.trim(), age })
+    .update({
+      display_name: name.trim(),
+      age,
+      gender,
+      ig_handle: ig || null,
+    })
     .eq("id", user.id);
 
   if (error) throw new Error(error.message);
 }
 
-// Save selected genres to user_music_data
-export async function saveGenres(genres: string[]) {
+// Save selected genres + generate the music signal from them (no reveal UI).
+// `genres` already rolled up by the client (EDM subgenres + "ELECTRONIC / EDM"),
+// so generateManualSignal — which matches against the 12 big categories — still
+// produces a signal, and profile/events/match keep working on the big categories.
+export async function saveGenresWithSignal(genres: string[]) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
-  // upsert so it works whether or not the row exists (signal step may have created it)
-  const { error } = await supabase
+  const { signal } = generateManualSignal(genres);
+
+  const { error: sErr } = await supabase
+    .from("users")
+    .update({ music_signal: signal })
+    .eq("id", user.id);
+  if (sErr) throw new Error(sErr.message);
+
+  // upsert so it works whether or not the row exists yet
+  const { error: gErr } = await supabase
     .from("user_music_data")
     .upsert({ user_id: user.id, genres }, { onConflict: "user_id" });
+  if (gErr) throw new Error(gErr.message);
 
-  if (error) throw new Error(error.message);
+  return { signal };
 }
 
 // Save a photo URL (called after client uploads to Storage)
@@ -91,6 +88,25 @@ export async function removePhotoUrl(url: string) {
   await supabase.from("user_photos").delete().eq("user_id", user.id).eq("url", url);
 }
 
+// Persist a drag-reordered photo order → sort_order = array index.
+export async function savePhotoOrder(orderedUrls: string[]) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  await Promise.all(
+    orderedUrls.map((url, i) =>
+      supabase
+        .from("user_photos")
+        .update({ sort_order: i })
+        .eq("user_id", user.id)
+        .eq("url", url)
+    )
+  );
+}
+
 // Finalize onboarding → mark onboarded, go to app
 export async function completeOnboarding() {
   const supabase = await createClient();
@@ -110,40 +126,19 @@ export async function completeOnboarding() {
   redirect("/events");
 }
 
-// Fetch the user's generated music signal (for the reveal step)
-export async function getMySignal(): Promise<{
-  signal: string | null;
-  topArtists: string[];
-  displayName: string;
-}> {
+// Prefill: the display name we may already have (e.g. from the Google profile).
+export async function getProfileBasics(): Promise<{ displayName: string }> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { signal: null, topArtists: [], displayName: "" };
+  if (!user) return { displayName: "" };
 
   const { data: profile } = await supabase
     .from("users")
-    .select("music_signal, display_name")
+    .select("display_name")
     .eq("id", user.id)
     .single();
 
-  const { data: music } = await supabase
-    .from("user_music_data")
-    .select("top_artists")
-    .eq("user_id", user.id)
-    .single();
-
-  // top_artists is jsonb array of {name,...}
-  const topArtists =
-    (music?.top_artists as { name?: string }[] | null)
-      ?.slice(0, 3)
-      .map((a) => a?.name)
-      .filter((n): n is string => !!n) ?? [];
-
-  return {
-    signal: profile?.music_signal ?? null,
-    topArtists,
-    displayName: profile?.display_name ?? "",
-  };
+  return { displayName: profile?.display_name ?? "" };
 }
