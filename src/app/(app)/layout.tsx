@@ -5,11 +5,6 @@ import BottomNav from "@/components/shared/BottomNav";
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="app-frame atmos-scanlines">
-      <div className="statusbar">
-        <span>9:41</span>
-        <span className="sb-dots">● ● ● ●</span>
-        <span>100%</span>
-      </div>
       {children}
       <BottomNav />
     </div>

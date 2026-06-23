@@ -19,12 +19,10 @@ export default function BottomNav() {
     <div className="bottomnav">
       <div className="nav-logo">res<span className="o">◉</span>nate</div>
       <button className={"nav-item" + (isActive("/events") ? " active" : "")} onClick={() => router.push("/events")}>
-        <span className="nav-ico">📅</span>
         <span>EVENTS</span>
         <span className="nav-dot" />
       </button>
       <button className={"nav-item" + (isActive("/discover") ? " active" : "")} onClick={() => router.push("/discover")}>
-        <span className="nav-ico">◈</span>
         <span>DISCOVER</span>
         <span className="nav-dot" />
       </button>
@@ -35,12 +33,10 @@ export default function BottomNav() {
       </button>
 
       <button className={"nav-item" + (isActive("/chat") ? " active" : "")} onClick={() => router.push("/chat")}>
-        <span className="nav-ico">💬</span>
         <span>CHAT</span>
         <span className="nav-dot" />
       </button>
       <button className={"nav-item" + (isActive("/profile") ? " active" : "")} onClick={() => router.push("/profile")}>
-        <span className="nav-ico">◐</span>
         <span>PROFILE</span>
         <span className="nav-dot" />
       </button>
