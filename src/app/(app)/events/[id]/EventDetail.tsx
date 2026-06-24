@@ -104,53 +104,72 @@ export default function EventDetail({
         : `$${Math.round(event.price_min)}`
       : "SEE TICKETS";
 
-  // ----- Detail content (poster / info / BuyPanel / going button) — unchanged -----
+  // ----- Detail content: poster block (independent, clear) then layered info -----
+  const poster = event.poster_url || event.cover_url;
+
   const detailBody = (
     <>
-      {/* cover */}
-      <div className="detail-cover dotgrid">
-        {(event.poster_url || event.cover_url) ? (
+      {/* POSTER — independent block, fixed 4:5 frame, object-fit cover, hard border */}
+      <div
+        className="dotgrid"
+        style={{
+          position: "relative",
+          width: "100%",
+          aspectRatio: "4 / 5",
+          border: "1px solid var(--border)",
+          background: "var(--panel)",
+          overflow: "hidden",
+          marginBottom: 22,
+        }}
+      >
+        {poster ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={event.poster_url || event.cover_url || ""}
+            src={poster}
             alt={event.artist}
-            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.55 }}
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
           />
         ) : (
           <>
-            <div className="cv-glow" style={{ background: `radial-gradient(circle at 50% 35%, ${glow}, transparent 70%)` }} />
-            <span className="cv-letter">{event.artist[0]}</span>
+            <div style={{ position: "absolute", inset: 0, background: `radial-gradient(circle at 50% 38%, ${glow}, transparent 70%)` }} />
+            <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--ndot)", fontSize: 120, lineHeight: 1, color: "rgba(255,255,255,.12)" }}>
+              {event.artist[0]}
+            </span>
           </>
         )}
-        <div style={{ position: "relative", zIndex: 2 }}>
-          <div className="detail-title">{event.artist}</div>
-          <div className="detail-when">{prettyDate(event.event_date)}{event.event_time ? ` · ${event.event_time}` : ""}</div>
-        </div>
       </div>
 
-      {/* match */}
-      <div style={{ textAlign: "center", margin: "20px 0 6px" }}>
-        <div className="label" style={{ marginBottom: 8 }}>YOUR MATCH</div>
-        <div className="match-huge">{pad(event.match)}%</div>
-        <div className="mono" style={{ fontSize: 10, letterSpacing: ".1em", color: "var(--gray)", marginTop: 6 }}>
-          {event.genre?.toUpperCase() ?? ""}
+      {/* 1 — TITLE: biggest / heaviest / white */}
+      <h1 style={{ fontFamily: "var(--ndot)", fontSize: 30, lineHeight: 1.05, letterSpacing: ".01em", color: "var(--white)", margin: "0 0 12px" }}>
+        {event.artist}
+      </h1>
+
+      {/* 2 — TIME: the focal point, neon green */}
+      <div style={{ fontFamily: "var(--mono)", fontSize: 16, letterSpacing: ".06em", color: "var(--green)", textShadow: "0 0 14px rgba(57,255,20,.35)", marginBottom: 16 }}>
+        {prettyDate(event.event_date)}{event.event_time ? ` · ${event.event_time}` : ""}
+      </div>
+
+      {/* 3 + 4 — VENUE / PRICE / GOING: secondary, gray, small with glyphs */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "var(--mono)", fontSize: 11, letterSpacing: ".06em", color: "var(--gray)" }}>
+          <span aria-hidden style={{ fontSize: 11, color: "var(--gray3)" }}>◎</span>
+          {event.venue ?? "VENUE TBA"}
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "var(--mono)", fontSize: 11, letterSpacing: ".06em", color: "var(--gray)" }}>
+          <span aria-hidden style={{ fontSize: 11, color: "var(--gray3)" }}>◇</span>
+          {priceLabel} · {pad(count)} GOING
         </div>
       </div>
 
       <hr className="dashed" />
 
-      {/* stats */}
-      <div className="line-pair">
-        <span className="label">GOING</span>
-        <span className="dot green" style={{ fontSize: 18 }}>{pad(count)}</span>
-      </div>
-      <div className="line-pair">
-        <span className="label">VENUE</span>
-        <span className="mono" style={{ fontSize: 12, color: "#fff" }}>{event.venue ?? "TBA"}</span>
-      </div>
-      <div className="line-pair">
-        <span className="label">PRICE</span>
-        <span className="mono" style={{ fontSize: 12, color: "#fff" }}>{priceLabel}</span>
+      {/* 5 — YOUR MATCH / ABOUT / buy / going (logic unchanged, spacing harmonized) */}
+      <div style={{ textAlign: "center", margin: "10px 0 6px" }}>
+        <div className="label" style={{ marginBottom: 8 }}>YOUR MATCH</div>
+        <div className="match-huge">{pad(event.match)}%</div>
+        <div className="mono" style={{ fontSize: 10, letterSpacing: ".1em", color: "var(--gray)", marginTop: 6 }}>
+          {event.genre?.toUpperCase() ?? ""}
+        </div>
       </div>
 
       {event.description && (
@@ -163,16 +182,8 @@ export default function EventDetail({
 
       <hr className="dashed" />
 
-      {/* 自办活动:原比例海报 + 站内购票/RSVP 面板 */}
-      {event.is_owned && event.poster_url && (
-        <div className="owned-poster">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={event.poster_url} alt={event.artist} />
-        </div>
-      )}
+      {/* 自办活动:站内购票/RSVP 面板;聚合活动:外链购票 */}
       {event.is_owned && <BuyPanel eventId={event.id} />}
-
-      {/* 聚合活动:外链购票 */}
       {!event.is_owned && event.ticket_url && (
         <a className="btn-out" href={event.ticket_url} target="_blank" rel="noopener noreferrer">
           GET TICKETS ↗
