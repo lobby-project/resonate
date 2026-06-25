@@ -11,6 +11,21 @@ import geohash from 'ngeohash';
 
 const TM_BASE = 'https://app.ticketmaster.com/discovery/v2/events.json';
 
+// Pick the sharpest cover. Our poster frame is portrait (4:5) and TM images are
+// mostly landscape, so cover-fit scales the image to the frame's HEIGHT — the
+// image's height is what drives sharpness (a 1024×576 16:9 only has 576px of
+// height and still upscales/blurs in a tall frame). So pick the tallest image,
+// tie-breaking by width. This naturally prefers TM's portrait/RETINA variants
+// when present. Events whose biggest source is small simply have no sharp image.
+function pickCover(
+  images?: { url: string; width?: number; height?: number }[]
+): string | null {
+  if (!images?.length) return null;
+  return [...images].sort(
+    (a, b) => (b.height ?? 0) - (a.height ?? 0) || (b.width ?? 0) - (a.width ?? 0)
+  )[0].url;
+}
+
 export interface RawEvent {
   tm_id: string;
   artist: string;
@@ -129,10 +144,7 @@ export async function fetchTicketmasterByGeo(
       price_min: priceRange?.min ?? null,
       price_max: priceRange?.max ?? null,
       genre: mapGenre(rawGenre),
-      cover_url:
-        e.images?.find((i: any) => i.ratio === '16_9')?.url ??
-        e.images?.[0]?.url ??
-        null,
+      cover_url: pickCover(e.images),
       ticket_url: e.url ?? null,
       description: e.info ?? e.pleaseNote ?? null,
     };
