@@ -35,7 +35,7 @@ export default async function EventDetailPage({
   const [eventRes, goingCountRes, mineRes, musicRes] = await Promise.all([
     supabase
       .from("events")
-      .select("id, artist, venue, event_date, event_time, price_min, price_max, genre, cover_url, description, ticket_url, is_owned, poster_url")
+      .select("id, artist, venue, event_date, event_time, price_min, price_max, genre, cover_url, description, ticket_url, is_owned, poster_url, city")
       .eq("id", id)
       .single(),
     supabase

@@ -22,8 +22,6 @@ const GLOWS: Record<string, string> = {
   "Classical / Orchestra": "rgba(180,160,255,.5)",
 };
 
-const pad = (n: number, w = 2) => String(n).padStart(w, "0");
-
 export type DetailEvent = {
   id: string;
   artist: string;
@@ -36,6 +34,7 @@ export type DetailEvent = {
   cover_url: string | null;
   description: string | null;
   ticket_url: string | null;
+  city: string | null;
   going_count: number;
   is_going: boolean;
   match: number;
@@ -69,7 +68,6 @@ export default function EventDetail({
 }) {
   const router = useRouter();
   const [going, setGoing] = useState(event.is_going);
-  const [count, setCount] = useState(event.going_count);
   const [busy, setBusy] = useState(false);
   // Going unlocks the tabs; navigation always defaults to Detail.
   const [tab, setTab] = useState<Tab>("detail");
@@ -79,7 +77,6 @@ export default function EventDetail({
     setBusy(true);
     const next = !going;
     setGoing(next);
-    setCount((c) => c + (next ? 1 : -1));
     try {
       await toggleGoingDetail(event.id);
       if (next) {
@@ -91,7 +88,6 @@ export default function EventDetail({
       }
     } catch {
       setGoing(!next);
-      setCount((c) => c + (next ? -1 : 1));
     } finally {
       setBusy(false);
     }
@@ -104,74 +100,76 @@ export default function EventDetail({
         : `$${Math.round(event.price_min)}`
       : "SEE TICKETS";
 
-  // ----- Detail content: poster block (independent, clear) then layered info -----
+  // ----- Detail content: responsive two-column (poster | info); ABOUT spans below -----
   const poster = event.poster_url || event.cover_url;
 
   const detailBody = (
     <>
-      {/* POSTER — independent block, fixed 4:5 frame, object-fit cover, hard border */}
-      <div
-        className="dotgrid"
-        style={{
-          position: "relative",
-          width: "100%",
-          aspectRatio: "4 / 5",
-          border: "1px solid var(--border)",
-          background: "var(--panel)",
-          overflow: "hidden",
-          marginBottom: 22,
-        }}
-      >
-        {poster ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={poster}
-            alt={event.artist}
-            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
-          />
-        ) : (
-          <>
-            <div style={{ position: "absolute", inset: 0, background: `radial-gradient(circle at 50% 38%, ${glow}, transparent 70%)` }} />
-            <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--ndot)", fontSize: 120, lineHeight: 1, color: "rgba(255,255,255,.12)" }}>
-              {event.artist[0]}
-            </span>
-          </>
-        )}
-      </div>
-
-      {/* 1 — TITLE: biggest / heaviest / white */}
-      <h1 style={{ fontFamily: "var(--ndot)", fontSize: 30, lineHeight: 1.05, letterSpacing: ".01em", color: "var(--white)", margin: "0 0 12px" }}>
-        {event.artist}
-      </h1>
-
-      {/* 2 — TIME: the focal point, neon green */}
-      <div style={{ fontFamily: "var(--mono)", fontSize: 16, letterSpacing: ".06em", color: "var(--green)", textShadow: "0 0 14px rgba(57,255,20,.35)", marginBottom: 16 }}>
-        {prettyDate(event.event_date)}{event.event_time ? ` · ${event.event_time}` : ""}
-      </div>
-
-      {/* 3 + 4 — VENUE / PRICE / GOING: secondary, gray, small with glyphs */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "var(--mono)", fontSize: 11, letterSpacing: ".06em", color: "var(--gray)" }}>
-          <span aria-hidden style={{ fontSize: 11, color: "var(--gray3)" }}>◎</span>
-          {event.venue ?? "VENUE TBA"}
+      <div className="ed-detail">
+        {/* POSTER — fixed frame (4:5), object-fit cover, hard border */}
+        <div className="ed-poster dotgrid">
+          {poster ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={poster} alt={event.artist} />
+          ) : (
+            <>
+              <div style={{ position: "absolute", inset: 0, background: `radial-gradient(circle at 50% 38%, ${glow}, transparent 70%)` }} />
+              <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--ndot)", fontSize: 120, lineHeight: 1, color: "rgba(255,255,255,.12)" }}>
+                {event.artist[0]}
+              </span>
+            </>
+          )}
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "var(--mono)", fontSize: 11, letterSpacing: ".06em", color: "var(--gray)" }}>
-          <span aria-hidden style={{ fontSize: 11, color: "var(--gray3)" }}>◇</span>
-          {priceLabel} · {pad(count)} GOING
+
+        {/* INFO — desktop right column / mobile below the poster */}
+        <div className="ed-info">
+          {/* 1 — title */}
+          <h1 style={{ fontFamily: "var(--ndot)", fontSize: 30, lineHeight: 1.05, letterSpacing: ".01em", color: "var(--white)", margin: "0 0 14px" }}>
+            {event.artist}
+          </h1>
+
+          {/* 2 — venue */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "var(--mono)", fontSize: 13, letterSpacing: ".04em", color: "var(--white)", marginBottom: 10 }}>
+            <span aria-hidden style={{ fontSize: 12, color: "var(--gray)" }}>◎</span>
+            {event.venue ?? "VENUE TBA"}
+          </div>
+
+          {/* 3 — time: the focal point, neon green */}
+          <div style={{ fontFamily: "var(--mono)", fontSize: 16, letterSpacing: ".06em", color: "var(--green)", textShadow: "0 0 14px rgba(57,255,20,.35)" }}>
+            {prettyDate(event.event_date)}{event.event_time ? ` · ${event.event_time}` : ""}
+          </div>
+
+          {/* 4 — city (shown only when present; no state column exists) */}
+          {event.city && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "var(--mono)", fontSize: 11, letterSpacing: ".06em", color: "var(--gray)", marginTop: 10 }}>
+              <span aria-hidden style={{ fontSize: 10, color: "var(--gray3)" }}>◎</span>
+              {event.city}
+            </div>
+          )}
+
+          {/* 5 — buy + going, kept with the info (not at page bottom) */}
+          <div style={{ marginTop: 24 }}>
+            {!event.is_owned && event.ticket_url && (
+              <div className="mono" style={{ fontSize: 10, letterSpacing: ".1em", color: "var(--gray)", marginBottom: 8 }}>
+                {priceLabel}
+              </div>
+            )}
+            {event.is_owned && <BuyPanel eventId={event.id} />}
+            {!event.is_owned && event.ticket_url && (
+              <a className="btn-out" href={event.ticket_url} target="_blank" rel="noopener noreferrer">
+                GET TICKETS ↗
+              </a>
+            )}
+            <div style={{ marginTop: 12 }}>
+              <button className={"btn-going" + (going ? " on" : "")} disabled={busy} onClick={onToggle}>
+                {going ? "✓ GOING" : "I'M GOING"}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
-      <hr className="dashed" />
-
-      {/* 5 — YOUR MATCH / ABOUT / buy / going (logic unchanged, spacing harmonized) */}
-      <div style={{ textAlign: "center", margin: "10px 0 6px" }}>
-        <div className="label" style={{ marginBottom: 8 }}>YOUR MATCH</div>
-        <div className="match-huge">{pad(event.match)}%</div>
-        <div className="mono" style={{ fontSize: 10, letterSpacing: ".1em", color: "var(--gray)", marginTop: 6 }}>
-          {event.genre?.toUpperCase() ?? ""}
-        </div>
-      </div>
-
+      {/* ABOUT — spans full width below the two columns */}
       {event.description && (
         <>
           <hr className="dashed" />
@@ -179,22 +177,6 @@ export default function EventDetail({
           <p className="about-text">{event.description}</p>
         </>
       )}
-
-      <hr className="dashed" />
-
-      {/* 自办活动:站内购票/RSVP 面板;聚合活动:外链购票 */}
-      {event.is_owned && <BuyPanel eventId={event.id} />}
-      {!event.is_owned && event.ticket_url && (
-        <a className="btn-out" href={event.ticket_url} target="_blank" rel="noopener noreferrer">
-          GET TICKETS ↗
-        </a>
-      )}
-
-      <div style={{ marginTop: 18 }}>
-        <button className={"btn-going" + (going ? " on" : "")} disabled={busy} onClick={onToggle}>
-          {going ? "✓ GOING" : "I'M GOING"}
-        </button>
-      </div>
     </>
   );
 

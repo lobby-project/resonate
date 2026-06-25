@@ -221,6 +221,21 @@ body{
 .detail-when{font-family:var(--mono); font-size:11px; letter-spacing:.08em; color:var(--gray); position:relative; z-index:2;}
 .match-huge{font-family:var(--dot); font-size:72px; line-height:.9; color:var(--green); text-shadow:0 0 26px rgba(57,255,20,.35);}
 .about-text{font-family:var(--mono); font-size:12px; line-height:1.7; color:#cfcfcf;}
+
+/* event detail — responsive Detail tab: single column on mobile, two columns
+   (poster | info) once the app frame goes desktop at 1024px. */
+.ed-detail{display:flex; flex-direction:column; gap:22px;}
+.ed-poster{
+  position:relative; width:100%; aspect-ratio:4/5;
+  border:1px solid var(--border); background:var(--panel); overflow:hidden;
+}
+.ed-poster > img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover;}
+.ed-info{display:flex; flex-direction:column; min-width:0;}
+@media (min-width:1024px){
+  .ed-detail{flex-direction:row; align-items:flex-start; gap:28px;}
+  .ed-poster{flex:0 0 380px; width:380px;}
+  .ed-info{flex:1 1 auto;}
+}
 .line-pair{display:flex; align-items:center; justify-content:space-between; margin:14px 0;}
 .btn-out{
   display:block; width:100%; text-align:center; cursor:pointer;
