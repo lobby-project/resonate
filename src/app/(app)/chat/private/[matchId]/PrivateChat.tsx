@@ -15,11 +15,13 @@ export type PrivateMsg = {
 export default function PrivateChat({
   matchId,
   otherName,
+  otherId,
   myUserId,
   initialMessages,
 }: {
   matchId: string;
   otherName: string;
+  otherId: string;
   myUserId: string;
   initialMessages: PrivateMsg[];
 }) {
@@ -74,9 +76,9 @@ export default function PrivateChat({
     <div className="screen convo">
       <div className="convo-head">
         <button className="back-btn" onClick={() => router.back()}>←</button>
-        <div className="ch-info">
+        <div className="ch-info" style={{ cursor: "pointer" }} onClick={() => router.push(`/profile/${otherId}`)}>
           <div className="ch-name">{otherName}</div>
-          <div className="ch-sub">● MATCHED · PRIVATE</div>
+          <div className="ch-sub">● MATCHED · PRIVATE · VIEW PROFILE</div>
         </div>
       </div>
 

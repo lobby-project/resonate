@@ -42,6 +42,7 @@ export default async function PrivateChatPage({
     <PrivateChat
       matchId={matchId}
       otherName={other?.display_name || "MATCH"}
+      otherId={otherId}
       myUserId={user.id}
       initialMessages={(msgs ?? []) as PrivateMsg[]}
     />

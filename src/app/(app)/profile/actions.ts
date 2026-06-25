@@ -5,17 +5,31 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { generateManualSignal } from "@/lib/music-signal";
 
-// Update name + age from profile edit.
-export async function updateBasicInfo(name: string, age: number) {
+// Update name + age + gender + IG + bio from profile edit.
+export async function updateBasicInfo(
+  name: string,
+  age: number,
+  gender: string,
+  igHandle: string,
+  bio: string
+) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
+  const ig = igHandle.trim().replace(/^@+/, "");
+
   const { error } = await supabase
     .from("users")
-    .update({ display_name: name.trim(), age })
+    .update({
+      display_name: name.trim(),
+      age,
+      gender: gender || null,
+      ig_handle: ig || null,
+      bio: bio.trim() || null,
+    })
     .eq("id", user.id);
   if (error) throw new Error(error.message);
   revalidatePath("/profile");

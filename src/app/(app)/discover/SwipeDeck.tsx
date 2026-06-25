@@ -23,7 +23,7 @@ export default function SwipeDeck({ eventId }: { eventId: string }) {
   const [cards, setCards] = useState<Candidate[]>([]);
   const [loading, setLoading] = useState(false);
   const [stamp, setStamp] = useState<"like" | "nope" | null>(null);
-  const [match, setMatch] = useState<{ matchId: string; name: string; photo: string | null } | null>(null);
+  const [match, setMatch] = useState<{ matchId: string; name: string; photo: string | null; userId: string } | null>(null);
   const [busy, setBusy] = useState(false);
 
   const loadCards = useCallback(async (id: string) => {
@@ -37,6 +37,8 @@ export default function SwipeDeck({ eventId }: { eventId: string }) {
   }, []);
 
   useEffect(() => {
+    // legitimate data fetch when the active event changes
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadCards(eventId);
   }, [eventId, loadCards]);
 
@@ -53,7 +55,7 @@ export default function SwipeDeck({ eventId }: { eventId: string }) {
       const res: SwipeResult = await swipe(target.id, eventId, direction);
       setCards((prev) => prev.filter((c) => c.id !== target.id));
       if (res.matched) {
-        setMatch({ matchId: res.matchId, name: res.otherName, photo: res.otherPhoto });
+        setMatch({ matchId: res.matchId, name: res.otherName, photo: res.otherPhoto, userId: target.id });
       }
     } finally {
       setBusy(false);
@@ -94,6 +96,13 @@ export default function SwipeDeck({ eventId }: { eventId: string }) {
                 <div className="ci-name">{top.name}{top.age ? <span> / {top.age}</span> : null}</div>
                 {top.signal && <div className="ci-role">{top.signal.toUpperCase()}</div>}
                 <div className="ci-going">● GOING TO THIS SHOW</div>
+                <button
+                  className="btn-link"
+                  style={{ marginTop: 8, fontSize: 10 }}
+                  onClick={() => router.push(`/profile/${top.id}`)}
+                >
+                  VIEW PROFILE →
+                </button>
               </div>
             </div>
           )}
@@ -134,6 +143,7 @@ export default function SwipeDeck({ eventId }: { eventId: string }) {
             <button className="btn-fill" onClick={() => router.push(`/chat/private/${match.matchId}`)}>
               SEND A MESSAGE →
             </button>
+            <button className="btn-link" onClick={() => router.push(`/profile/${match.userId}`)}>VIEW PROFILE</button>
             <button className="btn-link" onClick={() => setMatch(null)}>KEEP SWIPING</button>
           </div>
         </div>
