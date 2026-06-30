@@ -28,8 +28,6 @@ const GLOWS: Record<string, string> = {
   "Classical / Orchestra": "rgba(180,160,255,.5)",
 };
 
-const pad = (n: number, w = 2) => String(n).padStart(w, "0");
-
 export type FeedEvent = {
   id: string;
   artist: string;
@@ -176,7 +174,6 @@ export default function EventsFeed({ events, shelf }: { events: FeedEvent[]; she
                     {(ev as { is_owned?: boolean }).is_owned && <span className="rbadge">R◉</span>}
                   </div>
                   <div className="ev-meta">{[ev.venue, ev.event_time, price].filter(Boolean).join(" · ")}</div>
-                  <div className="ev-stats">{pad(ev.going_count)} GOING · MATCH {pad(ev.match)}%</div>
                 </div>
                 <button
                   className={"going-btn" + (going ? " on" : "")}
