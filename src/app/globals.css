@@ -644,39 +644,44 @@ body{
   .app-frame:has(> .bottomnav){
     max-width:1280px;
     display:grid;
-    grid-template-columns:208px minmax(0,1fr);
-    grid-template-rows:100dvh;
+    grid-template-columns:minmax(0,1fr);
+    grid-template-rows:auto 1fr;
   }
 
-  /* 底部tab → 左侧导航栏(同一组件,纯CSS重排) */
+  /* 底部tab → 顶部横向导航条(同一组件,纯CSS重排) */
   .bottomnav{
     position:static; transform:none; left:auto; bottom:auto;
     width:auto; max-width:none; height:auto;
     grid-column:1; grid-row:1;
-    flex-direction:column; align-items:stretch; justify-content:flex-start;
-    gap:4px; padding:22px 14px;
-    background:#000; border-top:none; border-right:1px solid var(--border);
+    flex-direction:row; align-items:center; justify-content:flex-start;
+    gap:8px; padding:0 22px; min-height:60px;
+    background:#000; border-top:none; border-bottom:1px solid var(--border);
   }
-  .bottomnav .nav-logo{display:flex;}
+  .bottomnav .nav-logo{display:flex; margin:0 18px 0 0; padding:0;}
   .nav-item{
-    flex:0 0 auto; flex-direction:row; justify-content:flex-start; gap:12px;
-    padding:11px 12px; border-radius:7px; font-size:11px;
+    flex:0 0 auto; flex-direction:row; align-items:center; justify-content:center;
+    padding:9px 14px; border-radius:7px; font-size:11px;
   }
   .nav-item.active{border:1px solid var(--green); background:rgba(57,255,20,.06);}
   .nav-item .nav-dot{display:none;}
   .nav-plus{
-    width:auto; height:auto; margin-top:auto; border-radius:7px;
-    padding:12px; flex-direction:row; gap:8px;
+    width:auto; height:auto; margin-left:auto; order:1; border-radius:7px;
+    padding:9px 16px; flex-direction:row; gap:8px;
     font-family:var(--mono); font-size:11px; letter-spacing:.1em;
   }
-  .nav-plus .nav-plus-label{display:inline;}
+  /* 桌面显示 NEW POST 文字。!important:文件后面的 base
+     `.nav-plus .nav-plus-label{display:none}` 在本项目 cascade 下会压过本规则,故强制。
+     仅在此 @media 内生效,移动端仍 display:none(不受影响)。 */
+  .bottomnav .nav-plus .nav-plus-label{display:inline !important;}
 
   /* 内容区 */
   .screen{
-    grid-column:2; grid-row:1;
+    grid-column:1; grid-row:2;
     padding:28px 36px calc(40px + env(safe-area-inset-bottom));
   }
   .screen > *{width:100%; max-width:1000px; margin-left:auto; margin-right:auto;}
+  /* .rshelf 的 base margin(0 左右)会盖掉上面的居中 → 显式居中,和下方列表对齐 */
+  .screen > .rshelf{margin-left:auto; margin-right:auto;}
   .screen.convo{padding-bottom:28px;}
   .screen.convo > *{max-width:760px; width:100%;}
 
@@ -717,18 +722,18 @@ body{
   /* 桌面:双栏并排,占据 app-frame 的内容列 */
   .chat-shell{
     display:grid;
-    grid-column:2; grid-row:1;
+    grid-column:1; grid-row:2;
     grid-template-columns:340px minmax(0,1fr);
-    height:100dvh; min-height:0;
+    height:100%; min-height:0;
   }
   /* 两栏在桌面始终可见,覆盖手机端的隐藏规则 */
   .chat-shell.at-index .chat-pane-convo,
   .chat-shell.at-convo .chat-pane-list{display:block;}
   .chat-pane-list{
     display:block; grid-column:1; min-width:0;
-    border-right:1px solid var(--border); overflow:hidden; height:100dvh;
+    border-right:1px solid var(--border); overflow:hidden; height:100%;
   }
-  .chat-pane-convo{display:block; grid-column:2; min-width:0; height:100dvh;}
+  .chat-pane-convo{display:block; grid-column:2; min-width:0; height:100%;}
 
   /* 栏内的 .screen 不再走 app-frame 的网格定位,各自填满本栏 */
   .chat-pane-list .screen,
