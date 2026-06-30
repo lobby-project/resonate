@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toggleGoingDetail } from "./actions";
+import { logEvent } from "@/lib/analytics";
 import BuyPanel from "@/components/ticketing/BuyPanel";
 import EventChat, { type EventMsg } from "@/app/(app)/chat/event/[id]/EventChat";
 import SwipeDeck from "@/app/(app)/discover/SwipeDeck";
@@ -72,6 +73,12 @@ export default function EventDetail({
   // Going unlocks the tabs; navigation always defaults to Detail.
   const [tab, setTab] = useState<Tab>("detail");
   const glow = GLOWS[event.genre ?? ""] ?? "rgba(57,255,20,.5)";
+
+  // funnel: detail_view — client-side so it fires on a real page open, not on
+  // Next prefetch/refresh. Re-fires if navigating to a different event.
+  useEffect(() => {
+    logEvent("detail_view", { eventId: event.id });
+  }, [event.id]);
 
   async function onToggle() {
     setBusy(true);

@@ -35,6 +35,15 @@ export async function toggleGoingDetail(eventId: string) {
       status: "going",
       anon_num: (count ?? 0) + 1,
     });
+
+    // funnel: log the going intent (append-only, best-effort; does NOT touch the
+    // event_attendees toggle above). Only on going→true.
+    await supabase.from("analytics_events").insert({
+      event_type: "going",
+      event_id: eventId,
+      user_id: user.id,
+      metadata: { via: "detail" },
+    });
   }
 
   revalidatePath(`/events/${eventId}`);

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { logEvent } from "@/lib/analytics";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -132,6 +133,12 @@ export default function BuyPanel({
 
   async function buy() {
     if (!tier) return;
+    // funnel: checkout_start — fires when the user actually clicks BUY (intent to
+    // pay), before hitting /api/checkout / Stripe. Not on panel mount.
+    logEvent("checkout_start", {
+      eventId,
+      metadata: { tier_id: tier.id, qty, subtotal_cents: subtotal },
+    });
     setBusy(true);
     setErr(null);
     const r = await fetch("/api/checkout", {
