@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { COL_TITLE } from "@/lib/schemaMap";
 import { fulfillOrder } from "@/lib/fulfill";
+import { cleanRef } from "@/lib/channel";
 
 // POST /api/checkout
 // body: { eventId, tierId, qty, code?, attendeeName, attendeePhone?, pwywCents? }
@@ -135,6 +136,7 @@ export async function POST(req: Request) {
       total_cents: totalCents,
       attendee_name: String(body.attendeeName).slice(0, 120),
       attendee_phone: ev.collect_phone ? (body.attendeePhone ?? null) : null,
+      channel: cleanRef(body.ref), // 渠道归因(服务端再洗一遍,不信客户端);覆盖付费+免费
     })
     .select("id")
     .single();

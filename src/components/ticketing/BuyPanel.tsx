@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { logEvent } from "@/lib/analytics";
+import { readRef } from "@/lib/channel";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -152,6 +153,7 @@ export default function BuyPanel({
         attendeeName: name.trim(),
         attendeePhone: phone.trim() || undefined,
         pwywCents: tier.pricing_method === "pwyw" ? Math.round(Number(pwyw || 0) * 100) : undefined,
+        ref: readRef() ?? undefined, // channel attribution: last-touch from localStorage
       }),
     });
     const j = await r.json();

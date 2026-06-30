@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toggleGoingDetail } from "./actions";
 import { logEvent } from "@/lib/analytics";
+import { cleanRef, storeRef, readRef } from "@/lib/channel";
 import BuyPanel from "@/components/ticketing/BuyPanel";
 import EventChat, { type EventMsg } from "@/app/(app)/chat/event/[id]/EventChat";
 import SwipeDeck from "@/app/(app)/discover/SwipeDeck";
@@ -68,6 +69,7 @@ export default function EventDetail({
   chat: EventChatData | null;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [going, setGoing] = useState(event.is_going);
   const [busy, setBusy] = useState(false);
   // Going unlocks the tabs; navigation always defaults to Detail.
@@ -76,9 +78,14 @@ export default function EventDetail({
 
   // funnel: detail_view — client-side so it fires on a real page open, not on
   // Next prefetch/refresh. Re-fires if navigating to a different event.
+  // Channel attribution: capture ?ref= as last-touch (localStorage) and log the
+  // effective ref into the detail_view metadata (click-side channel data).
+  const urlRef = cleanRef(searchParams.get("ref"));
   useEffect(() => {
-    logEvent("detail_view", { eventId: event.id });
-  }, [event.id]);
+    if (urlRef) storeRef(urlRef); // last-touch: only overwrite when a new ref arrives
+    const ref = urlRef ?? readRef();
+    logEvent("detail_view", { eventId: event.id, metadata: ref ? { ref } : undefined });
+  }, [event.id, urlRef]);
 
   async function onToggle() {
     setBusy(true);
