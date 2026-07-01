@@ -229,7 +229,7 @@ export default function LoginPage() {
                 placeholder="000000"
                 className="mono"
                 autoFocus
-                style={{ width: "100%", background: "#0a0a0a", border: "1px solid var(--border)", borderRadius: 6, padding: "13px", color: "#fff", fontSize: 18, letterSpacing: ".5em", textAlign: "center", outline: "none" }}
+                style={{ width: "100%", background: "var(--panel-2)", border: "1px solid var(--border)", borderRadius: "var(--r-sm)", padding: "13px", color: "#fff", fontSize: 18, letterSpacing: ".5em", textAlign: "center", outline: "none" }}
               />
               <button
                 className="btn-out"
@@ -257,7 +257,7 @@ export default function LoginPage() {
                 onKeyDown={(e) => { if (e.key === "Enter") signInWithEmail(); }}
                 placeholder="YOU@EMAIL.COM"
                 className="mono"
-                style={{ width: "100%", background: "#0a0a0a", border: "1px solid var(--border)", borderRadius: 6, padding: "13px", color: "#fff", fontSize: 12, letterSpacing: ".06em", outline: "none", textTransform: "uppercase" }}
+                style={{ width: "100%", background: "var(--panel-2)", border: "1px solid var(--border)", borderRadius: "var(--r-sm)", padding: "13px", color: "#fff", fontSize: 12, letterSpacing: ".06em", outline: "none", textTransform: "uppercase" }}
               />
               <button
                 className="btn-out"

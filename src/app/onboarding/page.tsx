@@ -180,8 +180,8 @@ export default function OnboardingPage() {
   }
 
   const inputStyle: React.CSSProperties = {
-    width: "100%", marginTop: 8, background: "#0a0a0a",
-    border: "1px solid var(--border)", borderRadius: 6, padding: "12px",
+    width: "100%", marginTop: 8, background: "var(--panel-2)",
+    border: "1px solid var(--border)", borderRadius: "var(--r-sm)", padding: "12px",
     color: "#fff", fontSize: 13, outline: "none",
   };
 
