@@ -21,7 +21,8 @@ export default async function EventsPage() {
     supabase
       .from("events")
       .select("id, artist, venue, event_date, event_time, price_min, genre, cover_url, city, lat, lng, is_owned")
-      .gte("event_date", todayLA)
+      // 过期口径统一：(end_date ?? event_date) >= 今天(LA);date_tbd 恒保留
+      .or(`date_tbd.is.true,end_date.gte.${todayLA},and(end_date.is.null,event_date.gte.${todayLA})`)
       .order("event_date", { ascending: true })
       .limit(500),
   ]);

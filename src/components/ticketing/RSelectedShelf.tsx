@@ -14,11 +14,15 @@ export default async function RSelectedShelf() {
     { auth: { persistSession: false } }
   );
 
+  // 过期过滤：(end_date ?? event_date) >= 今天(LA)。date_tbd 恒保留。
+  const todayLA = new Date().toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" });
+
   const { data: events } = await db
     .from("events")
     .select(`id, ${COL_TITLE}, poster_url, cover_url, date_tbd, event_date, event_type, location_type`)
     .eq("is_owned", true)
     .eq("status", "published")
+    .or(`date_tbd.is.true,end_date.gte.${todayLA},and(end_date.is.null,event_date.gte.${todayLA})`)
     .order("event_date", { ascending: true })
     .limit(12);
 

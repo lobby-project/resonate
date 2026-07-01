@@ -20,10 +20,13 @@ export default async function DiscoverPage() {
       .eq("user_id", user.id);
     const ids = (going ?? []).map((g) => g.event_id);
     if (ids.length) {
+      // 排除已过期的 going 活动:(end_date ?? event_date) >= 今天(LA);date_tbd 恒保留
+      const todayLA = new Date().toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" });
       const { data: evs } = await supabase
         .from("events")
         .select("id, artist, genre, cover_url")
         .in("id", ids)
+        .or(`date_tbd.is.true,end_date.gte.${todayLA},and(end_date.is.null,event_date.gte.${todayLA})`)
         .order("event_date", { ascending: true });
       events = (evs ?? []).map((e) => ({ id: e.id, artist: e.artist, genre: e.genre, cover_url: e.cover_url }));
     }
