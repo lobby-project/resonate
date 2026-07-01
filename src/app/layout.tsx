@@ -38,7 +38,7 @@ export default function RootLayout({
       lang="en"
       className={`${archivoBlack.variable} ${vt323.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
-      <body className="min-h-screen">
+      <body className="min-h-dvh">
         <LocationProvider>{children}</LocationProvider>
       </body>
     </html>

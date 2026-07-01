@@ -74,7 +74,7 @@ export function CitySearch({ onPick, placeholder = 'Search a city…', autoFocus
         autoFocus={autoFocus}
         onChange={(e) => setQ(e.target.value)}
         placeholder={placeholder}
-        style={{ width: '100%' }}
+        style={{ width: '100%', fontSize: 16 }}
       />
       {preds.length > 0 && (
         <ul

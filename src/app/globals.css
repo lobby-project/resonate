@@ -46,7 +46,7 @@ body{
   background:var(--bg);
   font-family:var(--mono);
   color:var(--white);
-  min-height:100vh;
+  min-height:100dvh;
   /* faint dot-grid across the whole app background */
   background-image:radial-gradient(rgba(255,255,255,.025) 1px, transparent 1px);
   background-size:22px 22px;
@@ -459,14 +459,23 @@ body{
 .input-bar{flex:0 0 auto; display:flex; gap:9px; padding:12px 0 4px; border-top:1px solid var(--border); align-items:center;}
 .input-bar input{
   flex:1; background:var(--panel-2); border:1px solid var(--border); border-radius:var(--r-sm); color:#fff;
-  font-family:var(--mono); font-size:12px; padding:12px 13px; outline:none;
+  font-family:var(--mono); font-size:16px; padding:12px 13px; outline:none;
 }
 .input-bar input::placeholder{color:var(--gray3); letter-spacing:.06em;}
 .input-bar input:focus{border-color:var(--gray3);}
 .send-btn{flex:0 0 auto; width:44px; height:44px; border-radius:7px; border:none; background:var(--green); color:#000; cursor:pointer; display:flex; align-items:center; justify-content:center;}
 
 /* convo screens are flex columns, not scrolling */
-.screen.convo{display:flex; flex-direction:column; padding-bottom:calc(94px + env(safe-area-inset-bottom));}
+/* 会话页:纯 flex 列填满 app-frame(dvh)。移动端隐藏底部导航(见下方 media),
+   input-bar 作最后一个 flex 子项贴底,键盘顶起时自然骑键盘上沿,无 fixed 导航打架。
+   不再为 fixed 导航预留 94px,只留安全区。 */
+.screen.convo{display:flex; flex-direction:column; padding-bottom:env(safe-area-inset-bottom);}
+/* 移动端(桌面导航是顶栏、有空间,不隐藏):打开真实会话时隐藏底部导航,避免键盘顶起悬空。
+   排除 .chat-empty-state(聊天索引页的"选择会话"占位,手机端虽 display:none 但仍在 DOM,
+   会被 :has 误命中 → 那是列表页,必须保留导航)。 */
+@media (max-width:1023px){
+  .app-frame:has(.screen.convo:not(.chat-empty-state)) .bottomnav{display:none;}
+}
 
 /* ===== profile ===== */
 .prof-top{display:flex; flex-direction:column; align-items:center; text-align:center; padding:14px 0 6px;}
@@ -599,7 +608,7 @@ body{
 .prof-input {
   width: 100%; background: var(--panel-2); border: 1px solid var(--border);
   border-radius: var(--r-sm); padding: 12px; color: #fff; font-family: var(--mono);
-  font-size: 12px; outline: none;
+  font-size: 16px; outline: none;
 }
 .prof-input:focus { border-color: var(--green-dim); }
 .prof-photos { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
@@ -618,7 +627,7 @@ body{
 .post-caption {
   width: 100%; min-height: 90px; resize: none;
   background: var(--panel-2); border: 1px solid var(--border); border-radius: var(--r);
-  padding: 14px; color: #fff; font-family: var(--mono); font-size: 13px;
+  padding: 14px; color: #fff; font-family: var(--mono); font-size: 16px;
   line-height: 1.5; outline: none; margin-bottom: 12px;
 }
 .post-caption:focus { border-color: var(--green-dim); }
@@ -884,7 +893,7 @@ body{
 .bp-field{margin-bottom:10px;}
 .bp-field.grow{flex:1;}
 .bp-field label{display:block; font-family:var(--mono); font-size:9px; letter-spacing:.14em; color:#888; margin-bottom:5px;}
-.bp-field input,.bp-field select{width:100%; background:var(--panel-2); border:1px solid var(--border); border-radius:var(--r-sm); color:#fff; font-family:var(--mono); font-size:13px; padding:10px 11px; outline:none;}
+.bp-field input,.bp-field select{width:100%; background:var(--panel-2); border:1px solid var(--border); border-radius:var(--r-sm); color:#fff; font-family:var(--mono); font-size:16px; padding:10px 11px; outline:none;}
 .bp-field input:focus,.bp-field select:focus{border-color:var(--green);}
 .bp-math{display:flex; justify-content:space-between; font-family:var(--mono); font-size:11px; color:#888; padding:8px 2px; border-top:1px dashed var(--border); margin-top:4px;}
 .bp-buy{width:100%; background:var(--green); border:none; color:#000; border-radius:var(--r-sm); padding:14px; font-family:var(--mono); font-size:12px; letter-spacing:.12em; cursor:pointer; margin-top:8px;}

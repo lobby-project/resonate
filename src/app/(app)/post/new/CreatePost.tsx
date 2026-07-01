@@ -94,7 +94,7 @@ export default function CreatePost({
         placeholder="TITLE"
         maxLength={80}
         className="prof-input"
-        style={{ marginBottom: 10, fontFamily: "var(--ndot)", fontSize: 15 }}
+        style={{ marginBottom: 10, fontFamily: "var(--ndot)", fontSize: 16 }}
       />
 
       {/* body */}
