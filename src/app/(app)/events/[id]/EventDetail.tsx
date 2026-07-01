@@ -120,76 +120,68 @@ export default function EventDetail({
   const detailBody = (
     <>
       <div className="ed-detail">
-        {/* POSTER — fixed frame (4:5), object-fit cover, hard border */}
-        <div className="ed-poster dotgrid">
-          {poster ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={poster} alt={event.artist} />
-          ) : (
-            <>
-              <div style={{ position: "absolute", inset: 0, background: `radial-gradient(circle at 50% 38%, ${glow}, transparent 70%)` }} />
-              <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--ndot)", fontSize: 120, lineHeight: 1, color: "rgba(255,255,255,.12)" }}>
-                {event.artist[0]}
-              </span>
-            </>
-          )}
+        {/* POSTER — enlarged frame (4:5), genre glow halo, hard border, dot-grid */}
+        <div className="ed-poster-wrap">
+          <div className="ed-poster-glow" style={{ background: `radial-gradient(circle at 50% 40%, ${glow}, transparent 70%)` }} />
+          <div className="ed-poster dotgrid">
+            {poster ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={poster} alt={event.artist} />
+            ) : (
+              <>
+                <div style={{ position: "absolute", inset: 0, opacity: 0.5, zIndex: 0, background: `radial-gradient(circle at 50% 40%, ${glow}, transparent 68%)` }} />
+                <span className="ed-poster-letter">{event.artist[0]}</span>
+              </>
+            )}
+          </div>
         </div>
 
         {/* INFO — desktop right column / mobile below the poster */}
         <div className="ed-info">
-          {/* 1 — title */}
-          <h1 style={{ fontFamily: "var(--ndot)", fontSize: 30, lineHeight: 1.05, letterSpacing: ".01em", color: "var(--white)", margin: "0 0 14px" }}>
-            {event.artist}
-          </h1>
+          <h1 className="ed-title">{event.artist}</h1>
 
-          {/* 2 — venue */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "var(--mono)", fontSize: 13, letterSpacing: ".04em", color: "var(--white)", marginBottom: 10 }}>
-            <span aria-hidden style={{ fontSize: 12, color: "var(--gray)" }}>◎</span>
+          <div className="ed-venue">
+            <span aria-hidden className="ed-ic">◎</span>
             {event.venue ?? "VENUE TBA"}
           </div>
 
-          {/* 3 — time: the focal point, neon green */}
-          <div style={{ fontFamily: "var(--mono)", fontSize: 16, letterSpacing: ".06em", color: "var(--green)", textShadow: "0 0 14px rgba(57,255,20,.35)" }}>
+          {/* time = the focal point, neon green */}
+          <div className="ed-time">
             {prettyDate(event.event_date)}{event.event_time ? ` · ${event.event_time}` : ""}
           </div>
 
-          {/* 4 — city (shown only when present; no state column exists) */}
           {event.city && (
-            <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "var(--mono)", fontSize: 11, letterSpacing: ".06em", color: "var(--gray)", marginTop: 10 }}>
-              <span aria-hidden style={{ fontSize: 10, color: "var(--gray3)" }}>◎</span>
+            <div className="ed-city">
+              <span aria-hidden className="ed-ic dim">◎</span>
               {event.city}
             </div>
           )}
 
-          {/* 5 — buy + going, kept with the info (not at page bottom) */}
-          <div style={{ marginTop: 24 }}>
-            {!event.is_owned && event.ticket_url && (
-              <div className="mono" style={{ fontSize: 10, letterSpacing: ".1em", color: "var(--gray)", marginBottom: 8 }}>
-                {priceLabel}
+          {/* action block — lifted onto a card so it reads as the primary action */}
+          <div className="ed-cta">
+            {event.is_owned ? (
+              <BuyPanel eventId={event.id} />
+            ) : event.ticket_url ? (
+              <div className="card">
+                <div className="ed-price">{priceLabel}</div>
+                <a className="btn-out" href={event.ticket_url} target="_blank" rel="noopener noreferrer">
+                  GET TICKETS ↗
+                </a>
               </div>
-            )}
-            {event.is_owned && <BuyPanel eventId={event.id} />}
-            {!event.is_owned && event.ticket_url && (
-              <a className="btn-out" href={event.ticket_url} target="_blank" rel="noopener noreferrer">
-                GET TICKETS ↗
-              </a>
-            )}
-            <div style={{ marginTop: 12 }}>
-              <button className={"btn-going" + (going ? " on" : "")} disabled={busy} onClick={onToggle}>
-                {going ? "✓ GOING" : "I'M GOING"}
-              </button>
-            </div>
+            ) : null}
+            <button className={"btn-going" + (going ? " on" : "")} disabled={busy} onClick={onToggle}>
+              {going ? "✓ GOING" : "I'M GOING"}
+            </button>
           </div>
         </div>
       </div>
 
       {/* ABOUT — spans full width below the two columns */}
       {event.description && (
-        <>
-          <hr className="dashed" />
-          <div className="label" style={{ marginBottom: 10 }}>ABOUT</div>
+        <div className="ed-about">
+          <div className="label" style={{ marginBottom: "var(--sp-3)" }}>ABOUT</div>
           <p className="about-text">{event.description}</p>
-        </>
+        </div>
       )}
     </>
   );
