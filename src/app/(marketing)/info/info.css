@@ -1,0 +1,314 @@
+/* ============================================================
+   /info — marketing landing. Final scope (2026-07):
+   1. Hero + fixed glass nav  = v3 draft (resonate_info_draft_v3.html), 1:1
+   2. Everything below hero   = original v1 implementation restored
+      (.mk- prefixed styles: sticky scroll-telling, how, why, marquee,
+       final CTA, footer)
+   3. FAQ section (new)       = from resonate_info_draft_v2_1.html, 1:1
+   All scoped under .info-root so nothing leaks into the app.
+   Motion discipline: only transform/opacity animate; CSS animations are
+   gated behind prefers-reduced-motion.
+   ============================================================ */
+
+/* tokens the drafts define that differ from / are missing in globals.css */
+.info-root{
+  --border:rgba(255,255,255,.09);
+  --gray-3:#555;
+  --disp:var(--font-archivo-black),'Archivo Black',sans-serif;
+
+  /* draft body styles */
+  background:var(--bg); color:var(--white); font-family:var(--mono);
+  background-image:radial-gradient(rgba(255,255,255,.05) 1px, transparent 1px);
+  background-size:22px 22px;
+  /* NO overflow-x:hidden here — ancestor overflow creates a containing
+     scroll box and silently kills the scroll-telling position:sticky.
+     Every wide child clips itself locally instead (.hero and .mk-marquee
+     have their own overflow:hidden — a future Spline canvas belongs
+     INSIDE .hero for the same reason). */
+  min-height:100dvh;
+}
+/* anchor smooth scroll, only while the landing is mounted */
+html:has(.info-root){scroll-behavior:smooth}
+.info-root a{color:inherit;text-decoration:none}
+
+/* ============================================================
+   1. V3 — top nav + hero (keep, byte-accurate to the draft)
+   ============================================================ */
+
+/* ── top nav · 毛玻璃固定条 ── */
+.info-root .nav{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;justify-content:space-between;align-items:center;
+  padding:16px 40px;
+  background:rgba(13,14,20,.45);
+  -webkit-backdrop-filter:blur(18px) saturate(1.6);
+  backdrop-filter:blur(18px) saturate(1.6);
+  border-bottom:1px solid rgba(255,255,255,.07)}
+.info-root .logo{font-family:var(--disp);font-size:22px;letter-spacing:-.5px;display:flex;align-items:center;gap:1px}
+.info-root .logo .odot{width:13px;height:13px;border-radius:50%;background:var(--green);display:inline-block;margin:0 3px;
+  box-shadow:0 0 14px rgba(57,255,20,.7)}
+.info-root .nav .mid{display:flex;gap:34px;font-size:11.5px;letter-spacing:2px;color:var(--gray-2)}
+.info-root .nav .mid a{transition:color .15s}
+.info-root .nav .mid a:hover{color:var(--green-soft)}
+.info-root .btn{display:inline-block;text-align:center;font-family:var(--mono);font-weight:700;font-size:13px;letter-spacing:2px;background:var(--green);color:#0a0f0a;
+  border:none;padding:13px 26px;cursor:pointer;transition:all .18s}
+.info-root .btn:hover{box-shadow:0 0 32px rgba(57,255,20,.55);transform:scale(1.03)}
+.info-root .btn.sm{padding:9px 18px;font-size:11px}
+
+/* ── hero ── */
+.info-root .hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;
+  text-align:center;padding:120px 24px 80px;position:relative;overflow:hidden}
+.info-root .hero .glow{position:absolute;width:720px;height:720px;border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle, rgba(57,255,20,.10) 0%, transparent 62%);top:8%;left:50%;transform:translateX(-50%)}
+.info-root .ticker{font-family:var(--dot);font-size:19px;color:var(--green);letter-spacing:5px;margin-bottom:34px;
+  text-shadow:0 0 12px rgba(57,255,20,.5)}
+.info-root .h1{font-family:var(--disp);font-size:clamp(38px,6.4vw,76px);line-height:1.06;letter-spacing:-1.5px;max-width:960px}
+.info-root .h1 .cursor{display:inline-block;width:.5em;height:.92em;background:var(--green);vertical-align:-.08em;margin-left:8px;
+  box-shadow:0 0 16px rgba(57,255,20,.6)}
+/* typewriter: hidden ghost reserves the final layout, live overlay types over it */
+.info-root .h1{position:relative}
+.info-root .h1 .ghost{visibility:hidden}
+.info-root .h1 .live{position:absolute;inset:0}
+.info-root .hero .sub{margin-top:30px;color:var(--gray-2);font-size:15px;line-height:1.75;max-width:560px}
+.info-root .hero .cta-row{margin-top:44px}
+.info-root .scrollhint{position:absolute;bottom:34px;left:50%;transform:translateX(-50%);color:var(--gray-3);
+  font-family:var(--dot);font-size:16px;letter-spacing:4px}
+
+/* ── v3 section shell (used by the FAQ) ── */
+.info-root .section{max-width:1080px;margin:0 auto;padding:96px 24px}
+.info-root .eyebrow{font-family:var(--dot);font-size:18px;color:var(--green-soft);letter-spacing:4px;margin-bottom:14px}
+.info-root .h2{font-family:var(--disp);font-size:clamp(26px,3.6vw,42px);letter-spacing:-.8px;margin-bottom:56px}
+
+/* ============================================================
+   FAQ (new) — from resonate_info_draft_v2_1.html, 1:1
+   ============================================================ */
+.info-root .faq details{border:1px solid var(--border);border-radius:10px;background:var(--panel);
+  box-shadow:var(--shadow-card);margin-bottom:14px;overflow:hidden}
+.info-root .faq summary{cursor:pointer;list-style:none;padding:20px 24px;font-weight:700;font-size:13.5px;
+  letter-spacing:1px;display:flex;justify-content:space-between;align-items:center}
+.info-root .faq summary::-webkit-details-marker{display:none}
+.info-root .faq summary::after{content:'+';font-family:var(--dot);font-size:24px;color:var(--green-soft)}
+.info-root .faq details[open] summary::after{content:'–'}
+.info-root .faq .a{padding:0 24px 22px;color:var(--gray-2);font-size:13px;line-height:1.8;max-width:640px}
+
+/* ============================================================
+   2. V1 — everything below the hero, restored verbatim
+   ============================================================ */
+
+/* ===== shared bits ===== */
+.info-root .mk-label{
+  display:flex; align-items:center; gap:8px;
+  font-family:var(--mono); font-size:10px; letter-spacing:.26em;
+  text-transform:uppercase; color:var(--green);
+}
+.info-root .mk-label::before{ content:'●'; font-size:8px; }
+.info-root .mk-sec-title{
+  font-family:var(--dot); font-size:clamp(34px,5vw,52px); line-height:1.02;
+  margin:14px 0 0; color:var(--white);
+}
+.info-root .mk-wrap{ max-width:1080px; margin:0 auto; padding:0 24px; }
+
+/* CTA — hover glow boost (scale handled by framer whileHover) */
+.info-root .mk-cta{
+  display:inline-block; cursor:pointer; text-decoration:none;
+  font-family:var(--mono); font-size:13px; font-weight:700;
+  letter-spacing:.2em; text-transform:uppercase;
+  padding:17px 38px; border-radius:var(--r-sm);
+  background:var(--green); color:#000;
+  box-shadow:0 0 22px rgba(57,255,20,.32);
+  transition:box-shadow .25s ease;
+}
+.info-root .mk-cta:hover{
+  box-shadow:0 0 40px rgba(57,255,20,.6), 0 0 90px rgba(57,255,20,.22);
+}
+
+/* ============================================================
+   SCROLL-TELLING — sticky phone + rotating captions
+   ============================================================ */
+.info-root .mk-scrolly{ position:relative; height:340vh; }
+.info-root .mk-scrolly-sticky{
+  position:sticky; top:0; height:100vh; height:100dvh; overflow:hidden;
+  display:flex; align-items:center; justify-content:center;
+}
+
+/* phone mockup — dotgrid placeholder screens, swap in real captures later */
+.info-root .mk-phone{
+  position:relative; z-index:2; flex:0 0 auto;
+  width:292px; height:604px; padding:12px;
+  border:1px solid var(--border); border-radius:40px;
+  background:var(--panel);
+  box-shadow:var(--shadow-card), 0 0 70px rgba(57,255,20,.09);
+  will-change:transform;
+}
+.info-root .mk-phone-notch{
+  position:absolute; top:24px; left:50%; transform:translateX(-50%);
+  width:84px; height:8px; border-radius:4px; background:var(--panel-2); z-index:3;
+}
+.info-root .mk-phone-screen{
+  position:relative; width:100%; height:100%; overflow:hidden;
+  border:1px solid var(--border); border-radius:29px;
+}
+.info-root .mk-screen-layer{
+  position:absolute; inset:0;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px;
+  text-align:center; padding:20px;
+}
+.info-root .mk-screen-num{ font-family:var(--mono); font-size:10px; letter-spacing:.3em; color:var(--green); }
+.info-root .mk-screen-word{ font-family:var(--dot); font-size:34px; line-height:1; color:rgba(255,255,255,.85); }
+.info-root .mk-screen-note{
+  font-family:var(--mono); font-size:8px; letter-spacing:.18em; color:var(--gray-3);
+  border:1px dashed var(--border); border-radius:4px; padding:5px 8px; text-transform:uppercase;
+}
+
+/* captions — desktop: flanking the phone; mobile: centered under it */
+.info-root .mk-cap{ position:absolute; z-index:3; max-width:320px; will-change:transform,opacity; }
+.info-root .mk-cap-l{ left:max(6vw,48px); text-align:left; }
+.info-root .mk-cap-r{ right:max(6vw,48px); text-align:right; }
+.info-root .mk-cap-num{ font-family:var(--mono); font-size:10px; letter-spacing:.3em; color:var(--green); margin-bottom:12px; }
+.info-root .mk-cap-title{ font-family:var(--dot); font-size:34px; line-height:1.05; margin:0 0 12px; color:var(--white); }
+.info-root .mk-cap-body{ font-family:var(--mono); font-size:12px; line-height:1.75; letter-spacing:.03em; color:var(--gray); margin:0; }
+
+@media (max-width:899px){
+  .info-root .mk-phone{ width:218px; height:452px; padding:9px; border-radius:32px; transform:translateY(-8vh); }
+  .info-root .mk-phone-notch{ top:18px; width:64px; }
+  .info-root .mk-phone-screen{ border-radius:24px; }
+  .info-root .mk-screen-word{ font-size:26px; }
+  .info-root .mk-cap, .info-root .mk-cap-l, .info-root .mk-cap-r{
+    left:24px; right:24px; bottom:7vh; top:auto; max-width:none; text-align:center;
+  }
+  .info-root .mk-cap-title{ font-size:26px; }
+}
+
+/* ============================================================
+   HOW IT WORKS
+   ============================================================ */
+.info-root .mk-how{ position:relative; padding:150px 0 60px; }
+.info-root .mk-how-grid{ position:relative; display:grid; grid-template-columns:repeat(3,1fr); gap:22px; margin-top:56px; }
+/* connective line drawn by scroll (scaleX, origin left) — desktop only */
+.info-root .mk-how-line{
+  position:absolute; top:-28px; left:4px; right:4px; height:1px;
+  background:linear-gradient(90deg, var(--green), var(--green-dim));
+  transform-origin:left center; will-change:transform;
+  box-shadow:0 0 8px rgba(57,255,20,.4);
+}
+.info-root .mk-step{
+  background:var(--panel); border:1px solid var(--border); border-radius:var(--r-lg);
+  box-shadow:var(--shadow-card); padding:28px 24px 30px;
+  will-change:transform,opacity;
+}
+.info-root .mk-step-num{
+  font-family:var(--dot); font-size:30px; color:var(--green);
+  text-shadow:0 0 16px rgba(57,255,20,.4); margin-bottom:16px;
+}
+.info-root .mk-step-title{ font-family:var(--dot); font-size:22px; line-height:1.1; margin:0 0 12px; color:var(--white); }
+.info-root .mk-step-body{ font-family:var(--mono); font-size:12px; line-height:1.75; letter-spacing:.03em; color:var(--gray); margin:0; }
+@media (max-width:899px){
+  .info-root .mk-how{ padding:100px 0 40px; }
+  .info-root .mk-how-grid{ grid-template-columns:1fr; gap:16px; margin-top:40px; }
+  .info-root .mk-how-line{ display:none; }
+}
+
+/* ============================================================
+   WHY RESONATE — tilt cards + genre marquee
+   ============================================================ */
+.info-root .mk-why{ padding:110px 0 0; }
+.info-root .mk-why-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:22px; margin-top:56px; perspective:900px; }
+.info-root .mk-tilt{
+  position:relative; overflow:hidden;
+  background:var(--panel); border:1px solid var(--border); border-radius:var(--r-lg);
+  box-shadow:var(--shadow-card); padding:30px 24px 32px;
+  transform-style:preserve-3d; will-change:transform;
+}
+/* cursor-chasing glow — moved with transform, faded with opacity */
+.info-root .mk-tilt-glow{
+  position:absolute; top:-140px; left:-140px; width:280px; height:280px;
+  border-radius:50%; pointer-events:none; opacity:0; will-change:transform,opacity;
+  background:radial-gradient(circle, rgba(57,255,20,.2), transparent 60%);
+}
+.info-root .mk-tilt-inner{ position:relative; z-index:2; }
+.info-root .mk-why-ico{ font-family:var(--dot); font-size:24px; color:var(--green); margin-bottom:16px; }
+.info-root .mk-why-title{ font-family:var(--dot); font-size:21px; line-height:1.12; margin:0 0 12px; color:var(--white); }
+.info-root .mk-why-body{ font-family:var(--mono); font-size:12px; line-height:1.75; letter-spacing:.03em; color:var(--gray); margin:0; }
+@media (max-width:899px){
+  .info-root .mk-why{ padding:80px 0 0; }
+  .info-root .mk-why-grid{ grid-template-columns:1fr; gap:16px; margin-top:40px; }
+}
+
+/* genre marquee — two identical halves, translateX(-50%) loop */
+.info-root .mk-marquee{
+  overflow:hidden; margin:110px 0 0;
+  border-top:1px solid var(--border); border-bottom:1px solid var(--border);
+  padding:22px 0;
+  -webkit-mask-image:linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  mask-image:linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+.info-root .mk-marquee-track{
+  display:flex; width:max-content; will-change:transform;
+  animation:mkMarquee 30s linear infinite;
+}
+.info-root .mk-mq-item{
+  font-family:var(--dot); font-size:24px; letter-spacing:.08em;
+  color:var(--gray); white-space:nowrap; padding-right:26px;
+}
+.info-root .mk-mq-item .sep{ color:var(--green); padding-left:26px; }
+@keyframes mkMarquee{ from{transform:translateX(0);} to{transform:translateX(-50%);} }
+@media (max-width:899px){
+  .info-root .mk-marquee{ margin-top:80px; }
+  .info-root .mk-mq-item{ font-size:19px; }
+}
+
+/* ============================================================
+   FINAL CTA + FOOTER
+   ============================================================ */
+.info-root .mk-final{
+  position:relative; overflow:hidden; text-align:center;
+  padding:170px 24px 150px;
+}
+.info-root .mk-final .mk-glow-c{
+  position:absolute; left:50%; top:50%; width:720px; height:720px;
+  transform:translate(-50%,-50%); border-radius:50%; pointer-events:none;
+  background:radial-gradient(circle, rgba(57,255,20,.1), transparent 60%);
+}
+.info-root .mk-final-title{
+  position:relative; z-index:2;
+  font-family:var(--dot); font-size:clamp(38px,6.4vw,72px); line-height:1.04; margin:0 0 36px;
+}
+.info-root .mk-final .mk-cta{ position:relative; z-index:2; }
+
+.info-root .mk-footer{ border-top:1px solid var(--border); }
+.info-root .mk-footer-inner{
+  max-width:1080px; margin:0 auto;
+  padding:30px 24px calc(30px + env(safe-area-inset-bottom));
+  display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:14px 26px;
+  font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--gray);
+}
+.info-root .mk-footer-brand{ font-family:var(--dot); font-size:17px; letter-spacing:.04em; color:var(--white); text-transform:none; }
+.info-root .mk-footer-brand .o{ color:var(--green); }
+.info-root .mk-footer-links{ display:flex; flex-wrap:wrap; align-items:center; gap:20px; }
+.info-root .mk-footer-links a{ color:var(--gray); text-decoration:none; transition:color .15s; }
+.info-root .mk-footer-links a:hover{ color:var(--green); }
+.info-root .mk-footer-soon{ color:var(--gray-3); cursor:default; }
+@media (max-width:640px){
+  .info-root .mk-footer-inner{ flex-direction:column; align-items:center; text-align:center; }
+}
+
+/* ============================================================
+   MOTION — v3 hero CSS animations + reduced-motion kill switch
+   (JS-side framer effects are gated by useReducedMotion)
+   ============================================================ */
+@media (prefers-reduced-motion: no-preference){
+  .info-root .logo .odot{animation:beat 1.25s ease-in-out infinite}
+  .info-root .h1 .cursor{animation:blink 1s steps(1) infinite}
+  .info-root .hero .glow{animation:drift 22s ease-in-out infinite alternate}
+}
+@keyframes beat{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(.82);opacity:.7}}
+@keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+@keyframes drift{from{transform:translateX(-58%) translateY(0)}to{transform:translateX(-42%) translateY(50px)}}
+
+@media (prefers-reduced-motion: reduce){
+  .info-root .mk-marquee-track{ animation:none; }
+}
+
+@media (max-width:900px){
+  .info-root .nav{padding:13px 20px}
+  .info-root .nav .mid{display:none}
+}
