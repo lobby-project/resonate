@@ -60,7 +60,9 @@ html:has(.info-root){scroll-behavior:smooth}
   background:radial-gradient(circle, rgba(57,255,20,.10) 0%, transparent 62%);top:8%;left:50%;transform:translateX(-50%)}
 .info-root .ticker{font-family:var(--dot);font-size:19px;color:var(--green);letter-spacing:5px;margin-bottom:34px;
   text-shadow:0 0 12px rgba(57,255,20,.5)}
-.info-root .h1{font-family:var(--disp);font-size:clamp(38px,6.4vw,76px);line-height:1.06;letter-spacing:-1.5px;max-width:960px}
+/* pixel-style headline (VT323, matching the lower sections) — sizing tuned
+   for the narrower glyphs, same values the original v1 hero used */
+.info-root .h1{font-family:var(--dot);font-size:clamp(42px,7.6vw,92px);line-height:1.06;letter-spacing:.01em;max-width:960px}
 .info-root .h1 .cursor{display:inline-block;width:.5em;height:.92em;background:var(--green);vertical-align:-.08em;margin-left:8px;
   box-shadow:0 0 16px rgba(57,255,20,.6)}
 /* typewriter: hidden ghost reserves the final layout, live overlay types over it */

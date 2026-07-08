@@ -68,9 +68,6 @@ function Hero() {
 
   return (
     <header className="hero">
-      {/* Spline slot: the 3D background canvas goes here, INSIDE .hero
-          (it has its own overflow:hidden) — never on an ancestor of the
-          scroll-telling section, or sticky dies. */}
       <div className="glow" />
       <div className="ticker">— YOU ARE LISTENER #001 —</div>
       <h1 className="h1">
